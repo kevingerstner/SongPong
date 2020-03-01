@@ -50,6 +50,10 @@ public abstract class Ball {
  * 	DEFAULT CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
+	public Ball() {
+		initPhysics();
+	}
+	
 	public Ball(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
 		paddle = song.myPaddle;
 		this.bd = song.bd;

@@ -120,7 +120,7 @@ public class SongPong extends GamePanel{
 		metrics = this.getFontMetrics(font);
 		
 		// song
-		paradise = new ParadiseColdplay(this, "src/Notemap/paradise_coldplay_nm.txt", 0);
+		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", 0);
 		activeSong = paradise;
 						
 	}

@@ -16,6 +16,9 @@ public class BallSimple extends Ball{
 	private double bounceSpeedMod = 1;
 	private double bounceAcc = (BALL_SPEED / bounceTime);
 
+	public BallSimple() {
+		
+	}
 
 	public BallSimple(SongMap song, ArrayList<Double> spawnTimes, int[] pos, Color c, int num) {
 		

@@ -58,9 +58,8 @@ public class BallDropper {
 		
 		calcColumns();
 		deltaY = paddle.getPaddleTopY() - START_POS_Y;
-		//BallSimple testBall = spawnSimpleBall(3.0, 16);
-		//dropTime = testBall.calcDropTime(deltaY);
-		//removeBall(testBall);
+		
+		calcDropTime();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -186,6 +185,12 @@ public class BallDropper {
 		}
 		else
 			return false;
+	}
+	
+	public void calcDropTime() {
+		BallSimple testBall = new BallSimple();
+		dropTime = testBall.calcDropTime(deltaY);
+		removeBall(testBall);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+

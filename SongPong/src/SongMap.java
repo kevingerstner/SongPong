@@ -125,13 +125,25 @@ public abstract class SongMap{
 			scanner = new Scanner(notePath);
 			while(scanner.hasNextLine()){
 			    String line = scanner.nextLine();
-			    String[] data = line.split(", ");
-			    String type = data[0];
+			    String[] data = line.split("\t");
+			    
+			    // if line is blank or incomplete, skip it
+			    if(data.length < 3) {
+			    	System.err.println("LINE SKIPPED");
+			    	break;
+			    }
+			    
+			    // COLUMN
 			    int column = Integer.valueOf(data[1]);
+			    
+			    // TIMES
 			    ArrayList<Double> times = new ArrayList<Double>();
 			    for(int i = 2; i < data.length; i++) {
 			    	times.add(Double.valueOf(data[i]));
 			    }
+			    
+			    // BALL TYPE
+			    String type = data[0];
 			    switch(type) {
 			    case "s":
 			    	bd.spawnSimpleBall(times, column);
