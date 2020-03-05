@@ -19,7 +19,7 @@ public abstract class SongMap{
 	protected ClickTimer ct;
 	protected SongSurfer ss;
 	
-	protected Paddle myPaddle;
+	protected Paddle paddle;
 	protected BallDropper bd;
 	
 	protected int screenW;
@@ -40,7 +40,7 @@ public abstract class SongMap{
 		screenH = game.pHeight;
 		
 		// Game components
-		myPaddle = new Paddle(this);
+		paddle = new Paddle(this);
 		bd = new BallDropper(this);
 				
 		// Music components
@@ -63,9 +63,11 @@ public abstract class SongMap{
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public void startSong() {
+		paddle.resetPaddle();
+		game.moveMouseToPos(paddle.getPaddleX(), paddle.getPaddleY());
 		game.customCursor.setCursorInvisible();
-		game.customCursor.moveMouseToStartPos();
 		tuneSpinner.cueMusic();
+		game.customCursor.setCursorInvisible();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -87,7 +89,7 @@ public abstract class SongMap{
 		
 		// Game Elements
 		bd.renderBalls(g);
-		myPaddle.drawPaddle(g);
+		paddle.drawPaddle(g);
 	}
 	
 	public void showBallColumns() {
@@ -99,7 +101,7 @@ public abstract class SongMap{
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public void handleMouseMove(int x, int y) {
-		myPaddle.movePaddle(x);
+		paddle.movePaddle(x);
 	}
 	
 	public void handleMousePress(int x, int y) {

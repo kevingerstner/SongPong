@@ -13,10 +13,10 @@ import javax.swing.JFrame;
 public class MouseCursor {
 	
 	SongPong game;
+	Paddle paddle;
 	BufferedImage blank = null;
 	Toolkit tk = Toolkit.getDefaultToolkit();
 	JFrame frame;
-	Robot mouseMover;
 	
 	Cursor c;
 	Cursor c1;
@@ -24,13 +24,7 @@ public class MouseCursor {
 	public MouseCursor(SongPong game) {
 		this.game = game;
 		this.frame = game;
-		try {
-			mouseMover = new Robot();
-		} catch (AWTException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
+	
 		try {
 			blank = ImageIO.read(new File("src/Images/UI/blank.png"));
 		} catch(Exception e) {
@@ -42,19 +36,12 @@ public class MouseCursor {
 	}
 	
 	public void setCursorInvisible() {
-		//System.out.println("Invisible cursor.");
+		System.out.println("Invisible cursor.");
 		frame.setCursor(c1);
 	}
 	
 	public void setCursorDefault() {
-		//System.out.println("Default cursor.");
+		System.out.println("Default cursor.");
 		frame.setCursor(c);
-	}
-	
-	public void moveMouseToStartPos() {
-		int x = (game.pWidth / 2);
-		int y = (game.pHeight - (game.pHeight / 10));
-
-		mouseMover.mouseMove(x, y);
 	}
 }

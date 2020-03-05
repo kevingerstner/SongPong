@@ -55,7 +55,7 @@ public abstract class Ball {
 	}
 	
 	public Ball(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
-		paddle = song.myPaddle;
+		paddle = song.paddle;
 		this.bd = song.bd;
 		this.gs = song.gs;
 		ballNum = num;

@@ -21,7 +21,7 @@ public class Paddle {
 		screenX = song.screenW;
 		screenY = song.screenH;
 		paddleY = screenY - (screenY / 10); // This is a good height for the paddle
-		//paddleX = (screenX / 2) - (PADDLE_RADIUS); // Spawn paddle in the middle of the screen
+		paddleX = (screenX / 2) - (PADDLE_RADIUS); // Spawn paddle in the middle of the screen
 		
 		rightBound = screenX - PADDLE_WIDTH;
 	}
@@ -30,6 +30,10 @@ public class Paddle {
 		Graphics2D g2 = (Graphics2D) g;
 		g.setColor(Color.red);
 		g2.fillRect(paddleX, paddleY, PADDLE_WIDTH, PADDLE_HEIGHT);
+	}
+	
+	public void resetPaddle() {
+		paddleX = (screenX / 2) - (PADDLE_RADIUS); // Spawn paddle in the middle of the screen
 	}
 	
 	public void movePaddle(int x) {
@@ -47,6 +51,10 @@ public class Paddle {
 		boolean xin = (x > xLeftBound) && (x < xRightBound);
 		boolean yin = (y > yTopBound) && (y < yBottomBound);
 		return xin && yin;
+	}
+	
+	public int getPaddleX() {
+		return paddleX;
 	}
 	
 	public int getPaddleY() {

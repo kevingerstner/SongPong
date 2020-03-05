@@ -46,11 +46,13 @@
  ----
  */
 
+import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.text.DecimalFormat;
@@ -70,6 +72,7 @@ public class SongPong extends GamePanel{
     // UI
     private Menu myMenu;
     protected MouseCursor customCursor;
+	private Robot mouseMover;
     
     // GAME
     private SongMap activeSong;
@@ -107,20 +110,27 @@ public class SongPong extends GamePanel{
 	@Override
 	protected void simpleInitialize() {
 		
+		this.requestFocus();
+		
 		// keyboard input
 		checkForMenu();
+		
+		try {
+			mouseMover = new Robot();
+		} catch (AWTException e1) {
+			e1.printStackTrace();
+		}
 		
 		// UI components
 		myMenu = new Menu(this);
 		customCursor = new MouseCursor(this);
-		//customCursor.setCursorInvisible();
 
 		// set up message font
 		font = new Font("SansSerif", Font.BOLD, 24);
 		metrics = this.getFontMetrics(font);
 		
 		// song
-		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", 0);
+		paradise = new ParadiseColdplay(this, "src/Notemap/nm_test.txt", 0);
 		activeSong = paradise;
 						
 	}
@@ -186,6 +196,10 @@ public class SongPong extends GamePanel{
 					paradise.showBallColumns();
 			}
 		});
+	}
+	
+	protected void moveMouseToPos(int x, int y) {
+		mouseMover.mouseMove(x, y);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+

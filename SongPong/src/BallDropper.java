@@ -3,7 +3,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public class BallDropper {
 
@@ -50,7 +49,7 @@ public class BallDropper {
 	public BallDropper(SongMap g) {
 		song = g;
 		stats = song.gs;
-		paddle = song.myPaddle;
+		paddle = song.paddle;
 		delayTime = song.delayTimeSec;
 		
 		screenW = song.screenW;
