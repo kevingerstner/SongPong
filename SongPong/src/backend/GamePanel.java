@@ -53,6 +53,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 
 	// used for full-screen exclusive mode
 	private GraphicsDevice gd;
+	protected GraphicsConfiguration gc;
 	private Graphics gScr;
 	private BufferStrategy bufferStrategy;
 	
@@ -122,7 +123,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 	
 	private void reportCapabilities() {
 		System.out.println("=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=");
-		GraphicsConfiguration gc = gd.getDefaultConfiguration();
+		gc = gd.getDefaultConfiguration();
 
 		// Image Capabilities
 		ImageCapabilities imageCaps = gc.getImageCapabilities();

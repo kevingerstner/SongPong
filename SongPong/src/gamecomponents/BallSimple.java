@@ -18,9 +18,9 @@ public class BallSimple extends Ball{
 	private double bounceTime = 1;
 	private double bounceSpeedMod = 1;
 	private double bounceAcc = (BALL_SPEED / bounceTime);
-
-	public BallSimple() {
-		
+	
+	public BallSimple(SongMap song) {
+		super(song);
 	}
 
 	public BallSimple(SongMap song, ArrayList<Double> spawnTimes, int[] pos, Color c, int num) {

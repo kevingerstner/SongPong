@@ -63,12 +63,13 @@ public abstract class SongMap{
 	public void startSong() {
 		musicThread = new Thread(tuneSpinner);
 		musicThread.start();
+		tuneSpinner.cueMusic();
+
 		System.out.println("Initialized music thread...");
 		
 		paddle.resetPaddle();
 		game.moveMouseToPos(paddle.getPaddleX(), paddle.getPaddleY());
 		game.customCursor.setCursorInvisible();
-		tuneSpinner.cueMusic();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+

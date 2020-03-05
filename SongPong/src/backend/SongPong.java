@@ -5,11 +5,19 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
+
+import javax.imageio.ImageIO;
 
 import music.ParadiseColdplay;
 import ui.Menu;
@@ -87,7 +95,7 @@ public class SongPong extends GamePanel{
 		metrics = this.getFontMetrics(font);
 		
 		// song
-		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", 5);
+		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", 4);
 		activeSong = paradise;
 						
 	}
@@ -96,7 +104,7 @@ public class SongPong extends GamePanel{
 	protected void songStart() {
 		activeSong.startSong();
 	}
-
+ 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	RENDER
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
@@ -114,6 +122,40 @@ public class SongPong extends GamePanel{
 			myMenu.displayMenu(g);
 		}
 
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	IMAGE
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	public BufferedImage loadImage(String name) {
+		try {
+			BufferedImage img = ImageIO.read(new File(name));
+			int transparency = img.getColorModel().getTransparency();
+			BufferedImage space = gc.createCompatibleImage(img.getWidth(), img.getHeight(), transparency);
+			Graphics2D g2d = space.createGraphics();
+			g2d.drawImage(img, 0, 0, null);
+			g2d.dispose();
+			return space;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public void drawImage(Graphics2D g2, BufferedImage img) {
+		
+	}
+	
+	public BufferedImage scaleImage(BufferedImage before) {
+		int w = before.getWidth();
+		int h = before.getHeight();
+		BufferedImage after = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		AffineTransform at = new AffineTransform();
+		at.scale(5.0, 5.0);
+		AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+		after = scaleOp.filter(before, after);
+		return after;
 	}
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+

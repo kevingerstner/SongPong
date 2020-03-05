@@ -20,7 +20,7 @@ public class BallDropper {
 	// CONSTANTS
 	final static int NUM_COL = 16;
 	protected final static float GRAVITY_C = 150f;
-	final static int START_POS_Y = -2 * Ball.BALL_SIZE; //NOTE: START_POS_Y = 0 means that the top of the ball is at y = 0
+	private int START_POS_Y; //NOTE: START_POS_Y = 0 means that the top of the ball is at y = 0
 	
 	// SCREEN INFO
 	protected int screenW;
@@ -33,6 +33,7 @@ public class BallDropper {
 	// BALLS
 	private int ballCounter = 0;
 	private int dropIndex = 0;
+	private int ballSize;
 	private ArrayList<Ball> ballList = new ArrayList<Ball>(); // list of balls to drop
 	private ArrayList<Ball> activeBallList = new ArrayList<Ball>(); //stores all balls currently spawned
 	private ArrayList<Ball> finishedBallList = new ArrayList<Ball>(); //stores all missed balls
@@ -60,7 +61,6 @@ public class BallDropper {
 		screenH = song.screenH;
 		
 		calcColumns();
-		deltaY = paddle.getPaddleTopY() - START_POS_Y;
 		
 		calcDropTime();
 	}
@@ -71,7 +71,7 @@ public class BallDropper {
 	
 	public BallBouncing spawnBounceBall(ArrayList<Double> hitTimes, int column) {
 		// ATTRIBUTES
-		int startPosX = ballCols[column] - (Ball.BALL_SIZE / 2);
+		int startPosX = ballCols[column] - (ballSize / 2);
 		int[] pos = {startPosX, START_POS_Y};
 		Color c = Color.red;
 		
@@ -91,7 +91,7 @@ public class BallDropper {
 	
 	public BallSimple spawnSimpleBall(ArrayList<Double> hitTimes, int column) {
 		// ATTRIBUTES
-		int startPosX = ballCols[column] - (Ball.BALL_SIZE / 2);
+		int startPosX = ballCols[column] - (ballSize / 2);
 		int[] pos = {startPosX, START_POS_Y};
 		Color c = Color.red;
 		
@@ -168,7 +168,7 @@ public class BallDropper {
 				// This second condition prevents a ball from spawning if its time has been skipped
 				if(checkRemove(b, currentTime)) {}
 				else {
-					System.out.println("BALL " + b.ballNum + "/ SPAWN " + df.format(b.getSpawnTime()) + "s / TIME: " + df.format(currentTime - delayTime));
+					System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + df.format(currentTime));
 					
 					activeBallList.add(b); //add to the list of spawned balls
 	
@@ -191,8 +191,12 @@ public class BallDropper {
 	}
 	
 	public void calcDropTime() {
-		BallSimple testBall = new BallSimple();
-		dropTime = testBall.calcDropTime(deltaY);
+		BallSimple testBall = new BallSimple(song);
+		ballSize = testBall.ballSize;
+		START_POS_Y = -2 * ballSize; 	// determine what height to spawn ball from
+		
+		deltaY = paddle.getPaddleTopY() - START_POS_Y; // how far to drop
+		dropTime = testBall.calcDropTime(deltaY); // how long to drop
 		removeBall(testBall);
 	}
 	

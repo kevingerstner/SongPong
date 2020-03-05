@@ -2,9 +2,16 @@ package backend;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import gamecomponents.Paddle;
 
@@ -12,9 +19,10 @@ public abstract class Ball {
 
 	// CONSTANTS
 	protected final static double BALL_SPEED = 200;
-	final static int BALL_SIZE = 50; // Diameter
+	protected int ballSize; // Diameter
 	private DecimalFormat df = new DecimalFormat("0.###");  // 3 dp
 	
+	protected SongPong game;
 	protected Paddle paddle;
 	protected BallDropper bd;
 	protected GameStats gs;
@@ -24,6 +32,12 @@ public abstract class Ball {
 	public int ballNum;
 	protected Color myColor = Color.red;
 	private boolean showBallNum = true;
+	private BufferedImage ballSprite;
+	private ImageHandler imgHand;
+	
+	// IMAGE
+	AffineTransform at = AffineTransform.getScaleInstance(4.0, 4.0);
+	AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
 	
 	// POSITION
 	protected int startPosX;
@@ -54,15 +68,26 @@ public abstract class Ball {
  * 	DEFAULT CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public Ball() {
+	/**
+	 * This constructor is used to create a test ball to gather info
+	 * @param song
+	 */
+	public Ball(SongMap song) {
+		this.game = song.game;
 		initPhysics();
+		ballSprite = game.loadImage("src/images/ball_green.png");
+		ballSize = (int)(ballSprite.getWidth() * 4.0);
 	}
 	
 	public Ball(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
 		paddle = song.paddle;
 		this.bd = song.bd;
 		this.gs = song.gs;
+		this.game = song.game;
 		ballNum = num;
+		ballSprite = game.loadImage("src/images/ball_green.png");
+		ballSize = (int)(ballSprite.getWidth() * 4.0);
+		imgHand = new ImageHandler();
 		
 		// POSITION
 		startPosition[0] = pos[0];
@@ -75,7 +100,7 @@ public abstract class Ball {
 		initPhysics();
 		
 		// ATTRIBUTES
-		ball_shape = new Ellipse2D.Float(startPosX, startPosY, BALL_SIZE, BALL_SIZE);
+		ball_shape = new Ellipse2D.Float(startPosX, startPosY, ballSize, ballSize);
 		
 		// TIME
 		this.spawnTimes = spawnTimes;
@@ -86,7 +111,6 @@ public abstract class Ball {
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	private void initPhysics() {
-		
 		// v0 = speed
 		velocity[0] = 0;
 		velocity[1] = BALL_SPEED;
@@ -186,7 +210,7 @@ public abstract class Ball {
 	}
 	
 	protected boolean checkMissed() {
-		return (int)position[1]-BALL_SIZE > bd.screenH;
+		return (int)position[1]-ballSize > bd.screenH;
 	}
 	
 	synchronized public void stopMoving() {
@@ -194,7 +218,7 @@ public abstract class Ball {
 	}
 	
 	public boolean checkCollide() {
-		return paddle.checkCatchBall((int)position[0], (int)position[1], BALL_SIZE);
+		return paddle.checkCatchBall((int)position[0], (int)position[1], ballSize);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -207,14 +231,16 @@ public abstract class Ball {
 		
 		// X :
 		// Y : shifted size down so that y-position is at the bottom of the ball (good for paddle collision)
-		g2.fillOval((int)position[0], (int)position[1]-BALL_SIZE, BALL_SIZE, BALL_SIZE);
+		
+		g2.drawImage(ballSprite, scaleOp, (int)position[0], (int)position[1]-ballSize);
+		//g2.fillOval((int)position[0], (int)position[1]-BALL_SIZE, BALL_SIZE, BALL_SIZE);
 		if(showBallNum)
 			displayBallNum(g2);
 	}
 	
 	private void displayBallNum(Graphics2D g2) {
 		g2.setColor(Color.white);
-		g2.drawString("" + ballNum, (int)position[0]+(BALL_SIZE/2)-5, (int)position[1]-(BALL_SIZE/2)+5);
+		g2.drawString("" + ballNum, (int)position[0]+(ballSize/2)-5, (int)position[1]-(ballSize/2)+5);
 	}
 		
 	

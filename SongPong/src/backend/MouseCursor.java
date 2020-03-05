@@ -29,9 +29,9 @@ public class MouseCursor {
 		this.frame = game;
 	
 		try {
-			blank = ImageIO.read(new File("src/Images/UI/blank.png"));
+			blank = ImageIO.read(new File("src/images/blank.png"));
 		} catch(Exception e) {
-			
+			System.err.println("Could not load mouse cursor");
 		}
 		
 		c1 = tk.createCustomCursor(blank, new Point(frame.getX(), frame.getY()), "img");
