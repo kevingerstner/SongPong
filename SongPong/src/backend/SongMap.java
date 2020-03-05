@@ -50,15 +50,10 @@ public abstract class SongMap{
 		tuneSpinner = new MusicPlayer(game, delayTimeSec);
 		tuneSpinner.loadMusic("src/Music/ColdplayParadise.wav");
 		readNoteMap(notemapPath);
-		musicThread = new Thread(tuneSpinner);
-		musicThread.start();
-		System.out.println("Initialized music thread...");
 		
 		// Tools
 		ct = new ClickTimer(this);
 		ss = new SongSurfer(this);
-		
-		startSong();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -66,11 +61,14 @@ public abstract class SongMap{
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public void startSong() {
+		musicThread = new Thread(tuneSpinner);
+		musicThread.start();
+		System.out.println("Initialized music thread...");
+		
 		paddle.resetPaddle();
 		game.moveMouseToPos(paddle.getPaddleX(), paddle.getPaddleY());
 		game.customCursor.setCursorInvisible();
 		tuneSpinner.cueMusic();
-		game.customCursor.setCursorInvisible();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -81,6 +79,7 @@ public abstract class SongMap{
 		bd.checkDrop();
 		bd.updateBalls();
 	}
+
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	RENDER
@@ -153,6 +152,11 @@ public abstract class SongMap{
 			    case "s":
 			    	bd.spawnSimpleBall(times, column);
 			    	break;
+			    case "b":
+			    	bd.spawnBounceBall(times, column);
+			    	break;
+			    default:
+			    	System.err.println("BALL TYPE DOES NOT EXIST");
 			    }
 			}
 			scanner.close();

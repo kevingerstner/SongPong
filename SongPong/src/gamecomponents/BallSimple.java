@@ -14,7 +14,6 @@ import backend.SongMap;
 public class BallSimple extends Ball{
 	
 	// ATTRIBUTES
-	Color ballColor;
 	
 	private double bounceTime = 1;
 	private double bounceSpeedMod = 1;
@@ -29,28 +28,27 @@ public class BallSimple extends Ball{
 		super(song, spawnTimes, pos, num);
 		
 		// ATTRIBUTES
-		ballColor = c;
+		myColor = c;
 	}
 	
 	protected void handleCollide() {
 		acceleration[1] = bounceAcc;
 		velocity[1] *= bounceSpeedMod;
+		myColor = Color.green;
+		doneBouncing = true;
 	}
 		
 	synchronized public void drawBall(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 		
 		// ATTRIBUTES
-		g2.setColor(ballColor);
 		
 		// MOTION
 		super.drawBall(g);
 	}
 
 	@Override
-	protected void handleBounce() {
-		//System.out.println("BOUNCING");
-		if(Math.abs(velocity[1]) <= 20) {isBouncing = false;}
+	protected void handleFinish() {
 		
 	}
 	

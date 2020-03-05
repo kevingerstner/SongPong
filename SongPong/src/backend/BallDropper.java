@@ -15,12 +15,11 @@ public class BallDropper {
 	private SongMap song;
 	private GameStats stats;
 	private Paddle paddle;
-	private MusicPlayer player;
 	private DecimalFormat df = new DecimalFormat("0.##"); // 2 dp
 	
 	// CONSTANTS
 	final static int NUM_COL = 16;
-	protected final static float GRAVITY_C = 9.8f;
+	protected final static float GRAVITY_C = 150f;
 	final static int START_POS_Y = -2 * Ball.BALL_SIZE; //NOTE: START_POS_Y = 0 means that the top of the ball is at y = 0
 	
 	// SCREEN INFO
@@ -173,7 +172,7 @@ public class BallDropper {
 					
 					activeBallList.add(b); //add to the list of spawned balls
 	
-					b.isFalling = true;
+					b.falling = true;
 					dropIndex++;
 				}
 			}
@@ -181,7 +180,7 @@ public class BallDropper {
 	}
 	
 	private boolean checkRemove(Ball b, double currentTime) {
-		if(b.getSpawnTime() + 0.25 < currentTime) {
+		if(b.getSpawnTime() + 0.25 < currentTime - delayTime) {
 			System.out.println("Removed ball with drop time " + df.format(b.getSpawnTime()));
 			finishedBallList.add(b);
 			dropIndex++;
@@ -205,7 +204,7 @@ public class BallDropper {
 		for(Ball ball : activeBallList) {
 			ball.moveBall();
 			
-			if(ball.checkDoneBouncing()) { finishedBallList.add(ball);}
+			if(ball.checkIfFinished()) { finishedBallList.add(ball);}
 			if(ball.checkMissed()) { finishedBallList.add(ball);}
 		}
 		

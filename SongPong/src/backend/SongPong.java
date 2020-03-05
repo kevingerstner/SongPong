@@ -87,9 +87,14 @@ public class SongPong extends GamePanel{
 		metrics = this.getFontMetrics(font);
 		
 		// song
-		paradise = new ParadiseColdplay(this, "src/Notemap/nm_test.txt", 0);
+		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", 5);
 		activeSong = paradise;
 						
+	}
+	
+	@Override
+	protected void songStart() {
+		activeSong.startSong();
 	}
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -117,7 +122,7 @@ public class SongPong extends GamePanel{
 
 	@Override
 	protected void simpleUpdate() {
-		paradise.updateSongStuff();
+		activeSong.updateSongStuff();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -129,7 +134,7 @@ public class SongPong extends GamePanel{
 		if(myMenu.isMenuEnabled()) {
 			myMenu.checkOnMousePress(x, y);
 		}
-		paradise.handleMousePress(x, y);
+		activeSong.handleMousePress(x, y);
 	}
 
 	@Override
@@ -138,7 +143,7 @@ public class SongPong extends GamePanel{
 			if(myMenu.isMenuEnabled()) {
 				myMenu.checkOnMouseHover(x, y);
 			}
-			paradise.handleMouseMove(x, y);
+			activeSong.handleMouseMove(x, y);
 		}
 	}
 	
@@ -150,7 +155,7 @@ public class SongPong extends GamePanel{
 				if (keyCode == KeyEvent.VK_ESCAPE)
 					myMenu.toggleMenu();
 				else if (keyCode == KeyEvent.VK_0)
-					paradise.showBallColumns();
+					activeSong.showBallColumns();
 			}
 		});
 	}

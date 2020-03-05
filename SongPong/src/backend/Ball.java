@@ -22,7 +22,7 @@ public abstract class Ball {
 	// ATTRIBUTES
 	Ellipse2D ball_shape;
 	public int ballNum;
-	Color myColor = Color.red;
+	protected Color myColor = Color.red;
 	private boolean showBallNum = true;
 	
 	// POSITION
@@ -44,9 +44,10 @@ public abstract class Ball {
 	protected double lastTime;
 	
 	// STATE
-	protected boolean isFalling = false;
-	protected boolean isCaught = false;
-	protected boolean isBouncing = false;
+	protected boolean falling = false;
+	protected boolean missed = false;
+	protected int timesCaught = 0;
+	protected int numBouncesLeft;
 	protected boolean doneBouncing = false;
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -69,6 +70,8 @@ public abstract class Ball {
 		position[0] = startPosition[0];
 		position[1] = startPosition[1];
 		
+		numBouncesLeft = spawnTimes.size();
+		
 		initPhysics();
 		
 		// ATTRIBUTES
@@ -89,7 +92,7 @@ public abstract class Ball {
 		velocity[1] = BALL_SPEED;
 		
 		acceleration[0] = 0;
-		acceleration[1] = 150;
+		acceleration[1] = BallDropper.GRAVITY_C;
 	}
 	
 	public double calcDropTime(double deltaY) {
@@ -115,9 +118,8 @@ public abstract class Ball {
 	}
 	
 	private void resetState() {
-		isFalling = true;
-		isBouncing = false;
-		isCaught = false;
+		falling = true;
+		timesCaught = 0;
 		doneBouncing = false;
 	}
 	
@@ -140,16 +142,34 @@ public abstract class Ball {
 		velocity[0] += (acceleration[0] * timeStep);
 		velocity[1] += (acceleration[1] * timeStep);
 		
+		position[1] += (velocity[1] * timeStep); // update position
+		
 		// ---- FALL ------------------------
-		if(isFalling) {
-			position[1] += (velocity[1] * timeStep); // update position
-			checkCollide();
+		if(falling && checkCollide()) {
+			
+			timesCaught++;
+			numBouncesLeft--;
+			
+			if(numBouncesLeft > 0) {
+				System.out.println("CAUGHT @ " + gs.getTimeElapsed());		
+				System.out.println("ball " + ballNum + " has " + numBouncesLeft + " bounces left.");
+				velocity[1] = -BALL_SPEED;
+				handleCollide();
+			}
+			else {
+				doneBouncing = true;
+				handleFinish();
+			}
+			
 		}
 		
-		// ---- BOUNCE ----------------------
-		if(isBouncing) {
-			position[1] += (velocity[1] * timeStep); // update position
-			handleBounce();
+		if(doneBouncing) {
+			falling = false;
+		}
+		
+		if(checkMissed()) {
+			missed = true;
+			handleFinish();
 		}
 		
 		// ---- END -------------------------
@@ -157,12 +177,16 @@ public abstract class Ball {
 		totalTime += timeStep;
 	}
 	
-	protected boolean checkMissed() {
-		return (int)position[1]-BALL_SIZE > bd.screenH;
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	STATE
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	protected boolean checkIfFinished() {
+		return doneBouncing;
 	}
 	
-	public boolean checkDoneBouncing() {
-		return (isCaught && !isBouncing);
+	protected boolean checkMissed() {
+		return (int)position[1]-BALL_SIZE > bd.screenH;
 	}
 	
 	synchronized public void stopMoving() {
@@ -170,23 +194,7 @@ public abstract class Ball {
 	}
 	
 	public boolean checkCollide() {
-		//DETECT
-		boolean collided = paddle.checkCatchBall((int)position[0], (int)position[1], BALL_SIZE);
-		
-		//ACTION
-		if(collided) {
-			//System.out.println("CAUGHT @ " + gs.getTimeElapsed());
-			isFalling = false;
-			isCaught = true;
-			isBouncing = true;
-			myColor = Color.blue;
-						
-			velocity[1] = -BALL_SPEED;
-			
-			handleCollide();
-		
-		}
-		return collided;
+		return paddle.checkCatchBall((int)position[0], (int)position[1], BALL_SIZE);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -254,6 +262,6 @@ public abstract class Ball {
 	
 	protected abstract void handleCollide();
 	
-	protected abstract void handleBounce();
+	protected abstract void handleFinish();
 	
 }

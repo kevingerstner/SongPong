@@ -79,13 +79,10 @@ public class MusicPlayer implements Runnable {
 	@Override
 	public void run() {
 		if(!musicStarted) {
-			while(!musicStarted || game.isPaused) {
-				Thread.yield();
-			}
 			try {
 				Thread.sleep(delayTimeMillis);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				System.err.println("Music sleep failed.");
 			}
 			musicStarted = true;
 			playMusic();

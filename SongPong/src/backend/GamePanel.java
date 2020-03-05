@@ -229,6 +229,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 			animator = new Thread(this); //puts this GameFrame in new Thread
 			animator.start(); // calls GameFrame's run method
 		}
+		songStart();
 	}
 	
 	public void run()
@@ -247,8 +248,8 @@ public abstract class GamePanel extends JFrame implements Runnable {
 		/* The frames of the animation are drawn inside the while loop. */
 		while (running) {
 			
-			gameUpdate();
-			screenUpdate();
+			gameUpdate(); // update
+			screenUpdate(); // render
 
 			afterTime = System.nanoTime();
 			timeDiff = afterTime - beforeTime;
@@ -331,7 +332,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 		if (!isPaused && !gameOver)
 			simpleUpdate();
 
-	} // end of gameUpdate()
+	}
 
 	
 
@@ -475,6 +476,8 @@ public abstract class GamePanel extends JFrame implements Runnable {
 
 	protected abstract void simpleUpdate();
 	
+	protected abstract void songStart();
+		
 	protected abstract void pauseActions();
 
 	/**
