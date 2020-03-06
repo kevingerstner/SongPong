@@ -199,5 +199,10 @@ public class SongPong extends GamePanel{
 		activeSong.bd.stopBalls();
 	}
 
+	@Override
+	protected void gameAnimate() {
+		activeSong.animateStuff();
+	}
+
 } // end of WormChase class
 

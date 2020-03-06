@@ -13,19 +13,23 @@ import gamecomponents.Paddle;
 
 public abstract class SongMap{
 	
+	// REFERENCES
 	protected SongPong game;
-	
 	protected GameStats gs;
 	protected Thread musicThread;
 	public MusicPlayer tuneSpinner;
 	public ImageHandler imgHandler;
+	public ScoreKeeper sk;
 	
+	// TOOLS
 	protected ClickTimer ct;
 	protected SongSurfer ss;
 	
+	// GAME COMPONENTS
 	protected Paddle paddle;
 	protected BallDropper bd;
 	
+	// WORLD INFO
 	public int screenW;
 	public int screenH;
 	public double worldScale = 4.0;
@@ -38,10 +42,10 @@ public abstract class SongMap{
 	
 	public SongMap(SongPong game, String notemapPath, double delaySec) {
 		this.game = game;
+		this.gs = game.gs;
 		this.delayTimeSec = delaySec;
 		imgHandler = new ImageHandler(this);
 		
-		gs = game.gs;
 		screenW = game.pWidth;
 		screenH = game.pHeight;
 		
@@ -57,6 +61,7 @@ public abstract class SongMap{
 		// Tools
 		ct = new ClickTimer(this);
 		ss = new SongSurfer(this);
+		sk = new ScoreKeeper(this);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -83,7 +88,18 @@ public abstract class SongMap{
 		bd.checkDrop();
 		bd.updateBalls();
 	}
+	
+	public void animateStuff() {
+		bd.animateBalls();
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	CLASS COMMUNICATOR
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 
+	public void addPoint() {
+		sk.addPoint();
+	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	RENDER
@@ -96,6 +112,8 @@ public abstract class SongMap{
 		// Game Elements
 		bd.renderBalls(g);
 		paddle.drawPaddle(g);
+		
+		sk.displayScore(g);
 	}
 	
 	public void showBallColumns() {

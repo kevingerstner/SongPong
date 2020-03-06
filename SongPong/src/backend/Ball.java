@@ -24,6 +24,7 @@ public abstract class Ball {
 	
 	// REFERENCES
 	protected SongPong game;
+	protected SongMap song;
 	protected Paddle paddle;
 	protected BallDropper bd;
 	protected GameStats gs;
@@ -35,7 +36,7 @@ public abstract class Ball {
 	protected Color myColor = Color.red;
 	
 	// IMAGE
-	private BufferedImage ballSprite;
+	protected BufferedImage ballSprite;
 	
 	// POSITION
 	protected int startPosX;
@@ -61,6 +62,7 @@ public abstract class Ball {
 	protected int timesCaught = 0;
 	protected int numBouncesLeft;
 	protected boolean doneBouncing = false;
+	protected boolean readyToDelete = false;
 	
 	// OPTIONS
 	private boolean showBallNum = true;
@@ -69,20 +71,8 @@ public abstract class Ball {
  * 	DEFAULT CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	/**
-	 * This constructor is used to create a test ball to gather info
-	 * @param song
-	 */
-	public Ball(SongMap song) {
-		this.game = song.game;
-		ih = song.imgHandler;
-		
-		initPhysics();
-		ballSprite = ih.loadImage("src/images/ball_red.png");
-		ballSize = (int)(ballSprite.getWidth() * worldScale);
-	}
-	
 	public Ball(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
+		this.song = song;
 		paddle = song.paddle;
 		this.spawnTimes = spawnTimes;
 		this.bd = song.bd;
@@ -105,6 +95,20 @@ public abstract class Ball {
 		
 		// PHYSICS
 		initPhysics();
+	}
+	
+	/**
+	 * This constructor is used to create a test ball to gather info
+	 * @param song
+	 */
+	public Ball(SongMap song) {
+		this.song = song;
+		this.game = song.game;
+		ih = song.imgHandler;
+		
+		initPhysics();
+		ballSprite = ih.loadImage("src/images/ball_red.png");
+		ballSize = (int)(ballSprite.getWidth() * worldScale);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -170,27 +174,26 @@ public abstract class Ball {
 		
 		// ---- FALL ------------------------
 		if(falling && checkCollide()) {
-			
+			System.out.println("CAUGHT BALL " + ballNum + " @ t = "+ df.format(gs.getTimeElapsed()));
+			position[1] -= 5; // move off of paddle
 			timesCaught++;
+			song.addPoint();
 			numBouncesLeft--;
 			
 			if(numBouncesLeft > 0) {
-				System.out.println("CAUGHT @ " + gs.getTimeElapsed());		
 				System.out.println("ball " + ballNum + " has " + numBouncesLeft + " bounces left.");
 				velocity[1] = -BALL_SPEED;
 				handleCollide();
 			}
 			else {
 				doneBouncing = true;
-				handleFinish();
+				velocity[1] = -BALL_SPEED;
+				handleCollide();
 			}
 			
 		}
 		
 		// ---- FINISH CONDITIONS -------------
-		if(doneBouncing) {
-			falling = false;
-		}
 		
 		if(checkMissed()) {
 			missed = true;
@@ -207,7 +210,7 @@ public abstract class Ball {
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	protected boolean checkIfFinished() {
-		return doneBouncing;
+		return readyToDelete;
 	}
 	
 	protected boolean checkMissed() {
@@ -229,8 +232,7 @@ public abstract class Ball {
 	protected void drawBall(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 	
-		int[] adjPos = {position[0],0};
-		adjPos[1] = position[1] - ballSize;
+		int[] adjPos = {position[0] - (ballSize / 2), position[1] - ballSize};
 		ih.drawImage(g2, ballSprite, adjPos);
 		
 		if(showBallNum)
@@ -239,7 +241,7 @@ public abstract class Ball {
 	
 	private void displayBallNum(Graphics2D g2) {
 		g2.setColor(Color.white);
-		g2.drawString("" + ballNum, (int)position[0]+(ballSize/2)-5, (int)position[1]-(ballSize/2)+5);
+		g2.drawString("" + ballNum, (int)(position[0] - 5), (int)(position[1] - (ballSize / 2) + 5 ));
 	}
 		
 	
@@ -288,5 +290,7 @@ public abstract class Ball {
 	protected abstract void handleCollide();
 	
 	protected abstract void handleFinish();
+	
+	protected abstract void animate();
 	
 }

@@ -39,7 +39,6 @@ public class Paddle {
 		rightBound = screenX - PADDLE_WIDTH;
 		
 		paddleSprite = ih.loadImage("src/images/paddle.png");
-		//paddleSize = (int)(ballSprite.getWidth() * worldScale);
 	}
 	
 	public void drawPaddle(Graphics g) {
@@ -59,8 +58,8 @@ public class Paddle {
 	}
 	
 	public boolean checkCatchBall(int x, int y, int size) {
-		int xLeftBound = position[0] - size;
-		int xRightBound = position[0] + PADDLE_WIDTH;
+		int xLeftBound = position[0] - (size / 2);
+		int xRightBound = position[0] + (size / 2) + PADDLE_WIDTH;
 		int yTopBound = position[1];
 		int yBottomBound = position[1] + PADDLE_HEIGHT;
 		

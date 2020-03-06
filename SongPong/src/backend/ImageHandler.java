@@ -40,6 +40,29 @@ public class ImageHandler {
 		}
 	}
 	
+	public BufferedImage[] loadStripImageArray(String fnm, int number) {
+		BufferedImage stripIm;
+		if ((stripIm = loadImage(fnm)) == null)
+			return null;
+		
+		int imWidth = (int) stripIm.getWidth() / number;
+		int height = stripIm.getHeight();
+		
+		int transparency = stripIm.getColorModel().getTransparency();
+		BufferedImage[] strip = new BufferedImage[number];
+		Graphics2D stripGC;
+		// each BufferedImage from the strip file is stored in strip[]
+		for (int i=0; i < number; i++) {
+			strip[i] = new BufferedImage(imWidth, height, transparency);
+			// create a graphics context
+			stripGC = strip[i].createGraphics();
+			// copy image
+			stripGC.drawImage(stripIm,0,0, imWidth, height, i*imWidth,0,(i*imWidth)+imWidth, height, null);
+			stripGC.dispose();
+		}
+		return strip;
+	}
+	
 	public void drawImage(Graphics2D g2, BufferedImage img, int[] pos) {
 		g2.drawImage(img, scaleOp, (int)pos[0], (int)pos[1]);
 	}

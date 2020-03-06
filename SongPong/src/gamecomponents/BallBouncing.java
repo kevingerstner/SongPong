@@ -25,5 +25,11 @@ public class BallBouncing extends Ball{
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	protected void animate() {
+		// TODO Auto-generated method stub
+		
+	}
 	
 }

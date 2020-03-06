@@ -239,6 +239,8 @@ public abstract class GamePanel extends JFrame implements Runnable {
 		long overSleepTime = 0L;
 		int noDelays = 0;
 		long excess = 0L;
+		double accumulator = 0;
+		double dt = 0.004; // animation refresh rate
 
 		gs.gameStartTime = System.nanoTime();
 		gs.prevStatsTime = gs.gameStartTime;
@@ -276,6 +278,15 @@ public abstract class GamePanel extends JFrame implements Runnable {
 			}
 
 			beforeTime = System.nanoTime();
+			
+			/*
+			 * This is a fixed time step portion, used for animation
+			 */
+			accumulator += ((double)timeDiff / 1_000_000_000);
+			while(accumulator >= dt) {
+				gameAnimate();
+				accumulator -= dt;
+			}
 
 			/*
 			 * If frame animation is taking too long, update the game state
@@ -300,7 +311,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 	 */
 	private void gameRender(Graphics gScr) {
 		// clear the background
-		gScr.setColor(Color.white);
+		gScr.setColor(Color.black);
 		gScr.fillRect(0, 0, pWidth, pHeight);
 
 		// call Song Pong's render
@@ -476,6 +487,8 @@ public abstract class GamePanel extends JFrame implements Runnable {
 	protected abstract void gameOverMessage(Graphics g);
 
 	protected abstract void simpleUpdate();
+	
+	protected abstract void gameAnimate();
 	
 	protected abstract void songStart();
 		

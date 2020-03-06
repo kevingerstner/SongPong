@@ -226,6 +226,12 @@ public class BallDropper {
 		return dropTime;
 	}
 	
+	public void animateBalls() {
+		for(Ball ball : activeBallList) {
+			ball.animate();
+		}
+	}
+	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	RENDER
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
