@@ -168,7 +168,7 @@ public class BallDropper {
 				// This second condition prevents a ball from spawning if its time has been skipped
 				if(checkRemove(b, currentTime)) {}
 				else {
-					System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + df.format(currentTime));
+					//System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + df.format(currentTime));
 					
 					activeBallList.add(b); //add to the list of spawned balls
 	

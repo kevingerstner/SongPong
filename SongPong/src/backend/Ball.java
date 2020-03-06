@@ -19,31 +19,29 @@ public abstract class Ball {
 
 	// CONSTANTS
 	protected final static double BALL_SPEED = 200;
-	protected int ballSize; // Diameter
+	private double worldScale;
 	private DecimalFormat df = new DecimalFormat("0.###");  // 3 dp
 	
+	// REFERENCES
 	protected SongPong game;
 	protected Paddle paddle;
 	protected BallDropper bd;
 	protected GameStats gs;
+	protected ImageHandler ih;
 	
 	// ATTRIBUTES
-	Ellipse2D ball_shape;
 	public int ballNum;
+	protected int ballSize; // Diameter
 	protected Color myColor = Color.red;
-	private boolean showBallNum = true;
-	private BufferedImage ballSprite;
-	private ImageHandler imgHand;
 	
 	// IMAGE
-	AffineTransform at = AffineTransform.getScaleInstance(4.0, 4.0);
-	AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+	private BufferedImage ballSprite;
 	
 	// POSITION
 	protected int startPosX;
 	protected int startPosY;
-	protected float[] startPosition = new float[2];
-	protected float[] position = new float[2];
+	protected int[] startPosition = new int[2];
+	protected int[] position = new int[2];
 	
 	// VELOCITY
 	protected double[] velocity = new double[2];
@@ -64,6 +62,9 @@ public abstract class Ball {
 	protected int numBouncesLeft;
 	protected boolean doneBouncing = false;
 	
+	// OPTIONS
+	private boolean showBallNum = true;
+	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	DEFAULT CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
@@ -74,20 +75,27 @@ public abstract class Ball {
 	 */
 	public Ball(SongMap song) {
 		this.game = song.game;
+		ih = song.imgHandler;
+		
 		initPhysics();
-		ballSprite = game.loadImage("src/images/ball_green.png");
-		ballSize = (int)(ballSprite.getWidth() * 4.0);
+		ballSprite = ih.loadImage("src/images/ball_red.png");
+		ballSize = (int)(ballSprite.getWidth() * worldScale);
 	}
 	
 	public Ball(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
 		paddle = song.paddle;
+		this.spawnTimes = spawnTimes;
 		this.bd = song.bd;
 		this.gs = song.gs;
+		ih = song.imgHandler;
 		this.game = song.game;
+		worldScale = song.worldScale;
+		
+		// ATTRIBUTES
 		ballNum = num;
-		ballSprite = game.loadImage("src/images/ball_green.png");
-		ballSize = (int)(ballSprite.getWidth() * 4.0);
-		imgHand = new ImageHandler();
+		numBouncesLeft = spawnTimes.size();
+		ballSprite = ih.loadImage("src/images/ball_red.png");
+		ballSize = (int)(ballSprite.getWidth() * worldScale);
 		
 		// POSITION
 		startPosition[0] = pos[0];
@@ -95,15 +103,8 @@ public abstract class Ball {
 		position[0] = startPosition[0];
 		position[1] = startPosition[1];
 		
-		numBouncesLeft = spawnTimes.size();
-		
+		// PHYSICS
 		initPhysics();
-		
-		// ATTRIBUTES
-		ball_shape = new Ellipse2D.Float(startPosX, startPosY, ballSize, ballSize);
-		
-		// TIME
-		this.spawnTimes = spawnTimes;
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -111,7 +112,6 @@ public abstract class Ball {
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	private void initPhysics() {
-		// v0 = speed
 		velocity[0] = 0;
 		velocity[1] = BALL_SPEED;
 		
@@ -122,9 +122,9 @@ public abstract class Ball {
 	public double calcDropTime(double deltaY) {
 		double determinant = BALL_SPEED * BALL_SPEED + (2 * acceleration[1] * deltaY);
 		double time = (-BALL_SPEED + Math.sqrt(determinant)) / acceleration[1];
-		System.out.println("++++++++++++++++++++++++++++++");
+		System.out.println("+++++++++++++++++++++++++++++++++++");
 		System.out.println("Expected Ball Drop Time: " + df.format(time) + " sec.");
-		System.out.println("++++++++++++++++++++++++++++++");
+		System.out.println("+++++++++++++++++++++++++++++++++++");
 		return time;
 	}
 	
@@ -187,6 +187,7 @@ public abstract class Ball {
 			
 		}
 		
+		// ---- FINISH CONDITIONS -------------
 		if(doneBouncing) {
 			falling = false;
 		}
@@ -227,13 +228,11 @@ public abstract class Ball {
 	
 	protected void drawBall(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
-		g2.setColor(myColor);
+	
+		int[] adjPos = {position[0],0};
+		adjPos[1] = position[1] - ballSize;
+		ih.drawImage(g2, ballSprite, adjPos);
 		
-		// X :
-		// Y : shifted size down so that y-position is at the bottom of the ball (good for paddle collision)
-		
-		g2.drawImage(ballSprite, scaleOp, (int)position[0], (int)position[1]-ballSize);
-		//g2.fillOval((int)position[0], (int)position[1]-BALL_SIZE, BALL_SIZE, BALL_SIZE);
 		if(showBallNum)
 			displayBallNum(g2);
 	}

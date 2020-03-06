@@ -2,10 +2,17 @@ package gamecomponents;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
 
+import backend.ImageHandler;
 import backend.SongMap;
+import backend.SongPong;
 
 public class Paddle {
+	
+	private ImageHandler ih;
 	
 	private final int PADDLE_WIDTH = 175;
 	private final int PADDLE_RADIUS = PADDLE_WIDTH / 2;
@@ -17,39 +24,45 @@ public class Paddle {
 	private int rightBound;
 	private int leftBound = 0;
 	
-	private int paddleY;
-	private int paddleX;
+	private int[] position = new int[2];
+	
+	// IMAGE
+	private BufferedImage paddleSprite;
 
 	public Paddle(SongMap song) {
+		ih = song.imgHandler;
 		screenX = song.screenW;
 		screenY = song.screenH;
-		paddleY = screenY - (screenY / 10); // This is a good height for the paddle
-		paddleX = (screenX / 2) - (PADDLE_RADIUS); // Spawn paddle in the middle of the screen
+		position[1] = screenY - (screenY / 10);// This is a good height for the paddle
+		position[0] = (screenX / 2) - (PADDLE_RADIUS);// Spawn paddle in the middle of the screen
 		
 		rightBound = screenX - PADDLE_WIDTH;
+		
+		paddleSprite = ih.loadImage("src/images/paddle.png");
+		//paddleSize = (int)(ballSprite.getWidth() * worldScale);
 	}
 	
 	public void drawPaddle(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 		g.setColor(Color.red);
-		g2.fillRect(paddleX, paddleY, PADDLE_WIDTH, PADDLE_HEIGHT);
+		ih.drawImage(g2, paddleSprite, position);
 	}
 	
 	public void resetPaddle() {
-		paddleX = (screenX / 2) - (PADDLE_RADIUS); // Spawn paddle in the middle of the screen
+		position[0] = (screenX / 2) - (PADDLE_RADIUS); // Spawn paddle in the middle of the screen
 	}
 	
 	public void movePaddle(int x) {
-		paddleX = x - (PADDLE_RADIUS); // Shift so cursor is in the middle
-		if(paddleX < leftBound) {paddleX = leftBound;} // Clamp left
-		if(paddleX > rightBound) {paddleX = rightBound;} // Clamp right
+		position[0] = x - (PADDLE_RADIUS); // Shift so cursor is in the middle
+		if(position[0] < leftBound) {position[0] = leftBound;} // Clamp left
+		if(position[0] > rightBound) {position[0] = rightBound;} // Clamp right
 	}
 	
 	public boolean checkCatchBall(int x, int y, int size) {
-		int xLeftBound = paddleX - size;
-		int xRightBound = paddleX + PADDLE_WIDTH;
-		int yTopBound = paddleY;
-		int yBottomBound = paddleY + PADDLE_HEIGHT;
+		int xLeftBound = position[0] - size;
+		int xRightBound = position[0] + PADDLE_WIDTH;
+		int yTopBound = position[1];
+		int yBottomBound = position[1] + PADDLE_HEIGHT;
 		
 		boolean xin = (x > xLeftBound) && (x < xRightBound);
 		boolean yin = (y > yTopBound) && (y < yBottomBound);
@@ -57,15 +70,14 @@ public class Paddle {
 	}
 	
 	public int getPaddleX() {
-		return paddleX;
+		return position[0];
 	}
 	
 	public int getPaddleY() {
-		return paddleY;
+		return position[1];
 	}
 	
 	public int getPaddleTopY() {
-		
-		return (paddleY - (PADDLE_HEIGHT / 2));
+		return (position[1] - (PADDLE_HEIGHT / 2));
 	}
 }

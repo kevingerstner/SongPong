@@ -18,6 +18,7 @@ public abstract class SongMap{
 	protected GameStats gs;
 	protected Thread musicThread;
 	public MusicPlayer tuneSpinner;
+	public ImageHandler imgHandler;
 	
 	protected ClickTimer ct;
 	protected SongSurfer ss;
@@ -27,6 +28,7 @@ public abstract class SongMap{
 	
 	public int screenW;
 	public int screenH;
+	public double worldScale = 4.0;
 	
 	protected double delayTimeSec;
 	
@@ -37,6 +39,7 @@ public abstract class SongMap{
 	public SongMap(SongPong game, String notemapPath, double delaySec) {
 		this.game = game;
 		this.delayTimeSec = delaySec;
+		imgHandler = new ImageHandler(this);
 		
 		gs = game.gs;
 		screenW = game.pWidth;

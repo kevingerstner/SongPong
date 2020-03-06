@@ -31,7 +31,7 @@ public class SongPong extends GamePanel{
 	private int score = 0;
 	private Font font;
 	private FontMetrics metrics;
-	
+			
     private DecimalFormat df = new DecimalFormat("0.##");  // 2 dp
     
     // UI
@@ -76,7 +76,7 @@ public class SongPong extends GamePanel{
 	protected void simpleInitialize() {
 		
 		this.requestFocus();
-		
+				
 		// keyboard input
 		checkForMenu();
 		
@@ -122,40 +122,6 @@ public class SongPong extends GamePanel{
 			myMenu.displayMenu(g);
 		}
 
-	}
-	
-/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
- * 	IMAGE
- * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
-	
-	public BufferedImage loadImage(String name) {
-		try {
-			BufferedImage img = ImageIO.read(new File(name));
-			int transparency = img.getColorModel().getTransparency();
-			BufferedImage space = gc.createCompatibleImage(img.getWidth(), img.getHeight(), transparency);
-			Graphics2D g2d = space.createGraphics();
-			g2d.drawImage(img, 0, 0, null);
-			g2d.dispose();
-			return space;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-	
-	public void drawImage(Graphics2D g2, BufferedImage img) {
-		
-	}
-	
-	public BufferedImage scaleImage(BufferedImage before) {
-		int w = before.getWidth();
-		int h = before.getHeight();
-		BufferedImage after = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-		AffineTransform at = new AffineTransform();
-		at.scale(5.0, 5.0);
-		AffineTransformOp scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-		after = scaleOp.filter(before, after);
-		return after;
 	}
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
