@@ -28,7 +28,7 @@ public class MusicPlayer implements Runnable {
 	public void playMusic() {
 		audioClip.start();
 		songStartTime = gs.getTimeElapsed(); 
-		System.out.println("START MUSIC");
+		System.out.println("START MUSIC @ time = " + songStartTime);
 	}
 	
 	public void cueMusic() {

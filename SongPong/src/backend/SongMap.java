@@ -40,7 +40,7 @@ public abstract class SongMap{
  * 	CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public SongMap(SongPong game, String notemapPath, double delaySec) {
+	public SongMap(SongPong game, String notemapPath, String musicPath, double delaySec) {
 		this.game = game;
 		this.gs = game.gs;
 		this.delayTimeSec = delaySec;
@@ -55,7 +55,8 @@ public abstract class SongMap{
 				
 		// Music components
 		tuneSpinner = new MusicPlayer(game, delayTimeSec);
-		tuneSpinner.loadMusic("src/Music/ColdplayParadise.wav");
+		tuneSpinner.loadMusic(musicPath);
+		//tuneSpinner.loadMusic("src/Music/ColdplayParadise.wav");
 		readNoteMap(notemapPath);
 		
 		// Tools
@@ -128,8 +129,8 @@ public abstract class SongMap{
 		paddle.movePaddle(x);
 	}
 	
-	public void handleMousePress(int x, int y) {
-		ct.recordClickTime(x);
+	public void handleMousePress(int x, int y, double timeClicked) {
+		ct.recordClickTime(x, timeClicked);
 	}
 	
 	public void handleKeyboardInput(int keyCode) {

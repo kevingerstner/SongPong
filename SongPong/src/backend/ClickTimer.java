@@ -7,6 +7,7 @@ public class ClickTimer {
 	BallDropper bd;
 	
 	private double songDelay;
+	private double gameLag = 0.25; //this value comes from observation and is not based in truth
 	
 	private DecimalFormat df = new DecimalFormat("0.##"); // 2 dp
 	
@@ -18,7 +19,7 @@ public class ClickTimer {
 		songDelay = game.delayTimeSec;
 		cols = bd.getColumns();
 	}
-	public void recordClickTime(int clickX) {
+	public void recordClickTime(int clickX, double timeClicked) {
 		int lowDist = 1000;
 		int closestCol = 0;
 		for(int w = 0; w < cols.length; w++) {
@@ -28,6 +29,6 @@ public class ClickTimer {
 			}
 		}
 		
-		System.out.println("Click @" + df.format(gs.getTimeElapsed() - songDelay) + ", " + closestCol);
+		System.out.println("Click @" + df.format(timeClicked - songDelay - gameLag) + ", " + closestCol);
 	}
 }

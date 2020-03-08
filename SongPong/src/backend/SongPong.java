@@ -20,6 +20,7 @@ import java.text.DecimalFormat;
 import javax.imageio.ImageIO;
 
 import music.ParadiseColdplay;
+import music.SchoolBillWurtz;
 import ui.Menu;
 
 public class SongPong extends GamePanel{
@@ -42,6 +43,7 @@ public class SongPong extends GamePanel{
     // GAME
     private SongMap activeSong;
     private ParadiseColdplay paradise;
+    private SchoolBillWurtz school;
     
     // STATE
     protected boolean gamePaused = false;
@@ -95,7 +97,8 @@ public class SongPong extends GamePanel{
 		metrics = this.getFontMetrics(font);
 		
 		// song
-		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", 4);
+		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", "src/Music/ColdplayParadise.wav", 4);
+		school = new SchoolBillWurtz(this, "src/notemap/nm_school_bill_wurtz.txt", "src/Music/School_Bill_Wurtz.wav", 4);
 		activeSong = paradise;
 						
 	}
@@ -115,7 +118,7 @@ public class SongPong extends GamePanel{
 	    gs.drawStatsBox(g);
 	    
 	    // Music Components
-	    paradise.renderSongStuff(g);
+	    activeSong.renderSongStuff(g);
 		
 		// UI Components
 		if(myMenu.isMenuEnabled()) {
@@ -139,10 +142,11 @@ public class SongPong extends GamePanel{
 	
 	@Override
 	protected void mousePress(int x, int y) {
+		double timeClicked = gs.getTimeElapsed();
 		if(myMenu.isMenuEnabled()) {
 			myMenu.checkOnMousePress(x, y);
 		}
-		activeSong.handleMousePress(x, y);
+		activeSong.handleMousePress(x, y, timeClicked);
 	}
 
 	@Override

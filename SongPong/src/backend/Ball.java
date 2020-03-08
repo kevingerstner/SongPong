@@ -55,6 +55,7 @@ public abstract class Ball {
 	protected boolean firstUpdate = true;
 	protected double totalTime = 0;
 	protected double lastTime;
+	protected double catchTime;
 	
 	// STATE
 	protected boolean falling = false;
@@ -124,7 +125,7 @@ public abstract class Ball {
 	}
 	
 	public double calcDropTime(double deltaY) {
-		double determinant = BALL_SPEED * BALL_SPEED + (2 * acceleration[1] * deltaY);
+		double determinant = BALL_SPEED * BALL_SPEED + (2.0 * acceleration[1] * deltaY);
 		double time = (-BALL_SPEED + Math.sqrt(determinant)) / acceleration[1];
 		System.out.println("+++++++++++++++++++++++++++++++++++");
 		System.out.println("Expected Ball Drop Time: " + df.format(time) + " sec.");
@@ -174,14 +175,15 @@ public abstract class Ball {
 		
 		// ---- FALL ------------------------
 		if(falling && checkCollide()) {
-			System.out.println("CAUGHT BALL " + ballNum + " @ t = "+ df.format(gs.getTimeElapsed()));
+			catchTime = gs.getTimeElapsed();
+			System.out.println("CAUGHT BALL " + ballNum + " @ t = "+ df.format(catchTime));
 			position[1] -= 5; // move off of paddle
 			timesCaught++;
 			song.addPoint();
 			numBouncesLeft--;
 			
 			if(numBouncesLeft > 0) {
-				System.out.println("ball " + ballNum + " has " + numBouncesLeft + " bounces left.");
+				//System.out.println("ball " + ballNum + " has " + numBouncesLeft + " bounces left.");
 				velocity[1] = -BALL_SPEED;
 				handleCollide();
 			}
@@ -250,6 +252,8 @@ public abstract class Ball {
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public double getSpawnTime() { return spawnTimes.get(0); }
+	
+	public double getCatchTime() { return catchTime; }
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	SETTERS

@@ -93,7 +93,7 @@ public class GameStats {
 		g.drawString(statString, statPosX + statBoxPadding, statPosY + statBoxPadding);  // was (10,55)
 		
 		// Time used and boxes used at bottom left
-		g.setColor(Color.black);
+		g.setColor(Color.white);
 		g.drawString("Time Spent: " + df.format(timeSpentInGame) + " secs", 10, gp.pHeight - 15);
 	}
 	

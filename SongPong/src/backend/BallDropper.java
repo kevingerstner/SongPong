@@ -19,7 +19,7 @@ public class BallDropper {
 	
 	// CONSTANTS
 	final static int NUM_COL = 16;
-	protected final static float GRAVITY_C = 150f;
+	protected final static double GRAVITY_C = 150;
 	private int START_POS_Y; //NOTE: START_POS_Y = 0 means that the top of the ball is at y = 0
 	
 	// SCREEN INFO
@@ -193,9 +193,10 @@ public class BallDropper {
 	public void calcDropTime() {
 		BallSimple testBall = new BallSimple(song);
 		ballSize = testBall.ballSize;
-		START_POS_Y = -2 * ballSize; 	// determine what height to spawn ball from
 		
-		deltaY = paddle.getPaddleTopY() - START_POS_Y; // how far to drop
+		START_POS_Y = -2 * ballSize;	// determine what height to spawn ball from
+		
+		deltaY = paddle.getPaddleY() - START_POS_Y; // how far to drop
 		dropTime = testBall.calcDropTime(deltaY); // how long to drop
 		removeBall(testBall);
 	}
@@ -208,7 +209,10 @@ public class BallDropper {
 		for(Ball ball : activeBallList) {
 			ball.moveBall();
 			
-			if(ball.checkIfFinished()) { finishedBallList.add(ball);}
+			if(ball.checkIfFinished()) { 
+				finishedBallList.add(ball);
+				//debugCatchTime(ball);
+			}
 			if(ball.checkMissed()) { finishedBallList.add(ball);}
 		}
 		
@@ -218,8 +222,14 @@ public class BallDropper {
 		}
 	}
 	
-	public double calcDropTime(int y1, int y2) {
-		return (y2 - y1) / Ball.BALL_SPEED;
+	public void debugCatchTime(Ball ball) {
+		double actualCatchTime = ball.getCatchTime();
+		double shouldBeCaught = ball.getSpawnTime() + delayTime + dropTime;
+		System.out.println("--------------------------------");
+		System.out.println("Expected Catch time: " + df.format(shouldBeCaught));
+		System.out.println("Actual Catch time: " + df.format(actualCatchTime));
+		System.out.println("CATCH DT: " + df.format(actualCatchTime - (shouldBeCaught)));
+		System.out.println("--------------------------------");
 	}
 	
 	public double getDropTime() {
