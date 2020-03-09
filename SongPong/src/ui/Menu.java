@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
+import backend.Scene;
 import backend.SongMap;
 import backend.SongPong;
 
@@ -12,8 +13,9 @@ public class Menu {
 	private SongPong game;
 	protected boolean isEnabled;
 	
-	private Color menuBGColor = new Color(130,130,130);
+	private Color menuBGColor = Color.black;
 	private Font font;
+	private float fontSize = 36f;
 	private int menuWidth = 480;
 	private int menuHeight = 480;
 	
@@ -21,9 +23,15 @@ public class Menu {
 	
 	private ArrayList<MenuButton> buttons = new ArrayList<MenuButton>();
 	private MenuButton quitButton;
+	private MenuButton menuButton;
+	
+	private boolean switchedScenes = false;
 	
 	public Menu(SongPong game) {
 		this.game = game;
+		
+		font = game.fh.getFont("arcade").deriveFont(fontSize);
+
 		createButtons();
 		
 		isEnabled = false;
@@ -32,11 +40,21 @@ public class Menu {
 	}
 	
 	private void createButtons() {
-		quitButton = new MenuButton(game, "Quit", paddingLeft, 300) {
-			public void mouseAction(){
+		menuButton = new MenuButton("Back to Menu", paddingLeft, 300, Color.white, Color.red, font, "left") {
+			@Override
+			public void mouseAction() {
+				switchedScenes = true;
+				toggleMenu();
+				game.startScene("mainmenu");
+			}
+		};
+		quitButton = new MenuButton("Quit", paddingLeft, 400, Color.white, Color.red, font, "left") {
+			@Override
+			public void mouseAction() {
 				game.running = false;
 			}
 		};
+		buttons.add(menuButton);
 		buttons.add(quitButton);
 	}
 	
@@ -48,12 +66,11 @@ public class Menu {
 		g2.fillRect(0, 0, menuWidth, menuHeight);
 		
 		//GLOBAL APPEARANCE
-		font = new Font("SansSerif", Font.BOLD, 24);
 		g.setFont(font);
 		g.setColor(Color.white);
 		
 		String menu = "Menu";
-		g.drawString(menu, paddingLeft, 50);
+		g.drawString(menu, paddingLeft, 100);
 		
 		for(MenuButton butt : buttons) {
 			butt.drawButton(g);
@@ -75,20 +92,21 @@ public class Menu {
 	}
 	
 	public void toggleMenu() {
-		System.out.println("<ACTION> Toggle Menu");
-		
-		SongMap activeSong = game.getActiveSong();
 		
 		if(!isEnabled) {
+			System.out.println("<MENU> PAUSE GAME");
 			isEnabled = true;
-			game.pauseActions();
+			game.pauseGame();
 			
 		}
 		else {
+			System.out.println("<MENU> RESUME GAME");
 			isEnabled = false;
 			game.resumeGame();
-			game.customCursor.setCursorInvisible();
-			activeSong.tuneSpinner.resumeMusic();
+			if(!switchedScenes) {
+				game.customCursor.setCursorInvisible();
+				game.getActiveSong().handleGameResume();
+			}
 		}
 	}
 	

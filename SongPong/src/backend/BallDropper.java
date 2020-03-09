@@ -9,19 +9,16 @@ import gamecomponents.BallBouncing;
 import gamecomponents.BallSimple;
 import gamecomponents.Paddle;
 
-public class BallDropper {
+public class BallDropper implements Runnable{
 
 	// REFERENCES
 	private SongMap song;
-	private GameStats stats;
 	private Paddle paddle;
-	private MusicPlayer player;
-	private DecimalFormat df = new DecimalFormat("0.##"); // 2 dp
+	private DecimalFormat df = new DecimalFormat("0.###"); // 3 dp
 	
 	// CONSTANTS
 	final static int NUM_COL = 16;
-	protected final static double GRAVITY_C = 150;
-	private int START_POS_Y; //NOTE: START_POS_Y = 0 means that the top of the ball is at y = 0
+	protected final static double GRAVITY_C = 300; // the ball accerates 150 pixels per second
 	
 	// SCREEN INFO
 	protected int screenW;
@@ -29,7 +26,10 @@ public class BallDropper {
 	private int screenPadding;
 	private int effScreenW;
 	private int[] ballCols;
+	
+	// DEBUG
 	protected boolean showBallColumns = true;
+	protected boolean showBallNum = false;
 	
 	// BALLS
 	private int ballCounter = 0;
@@ -38,14 +38,6 @@ public class BallDropper {
 	private ArrayList<Ball> ballList = new ArrayList<Ball>(); // list of balls to drop
 	private ArrayList<Ball> activeBallList = new ArrayList<Ball>(); //stores all balls currently spawned
 	private ArrayList<Ball> finishedBallList = new ArrayList<Ball>(); //stores all missed balls
-	
-	// TIME
-	protected double dropTime;
-	protected double delayTime;
-	protected double lagShift = 0.25; // Don't know where this lag is coming from
-	
-	// POSITION
-	private double deltaY;
 
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -54,57 +46,46 @@ public class BallDropper {
 	
 	public BallDropper(SongMap g) {
 		song = g;
-		stats = song.gs;
 		paddle = song.paddle;
-		delayTime = song.delayTimeSec;
 		
 		screenW = song.screenW;
 		screenH = song.screenH;
 		
 		calcColumns();
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	RUN
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
 		
-		calcDropTime();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	SPAWN
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public BallBouncing spawnBounceBall(ArrayList<Double> hitTimes, int column) {
+	public BallBouncing createBounceBall(ArrayList<Double> hitTimes, int column) {
 		// ATTRIBUTES
 		int startPosX = ballCols[column] - (ballSize / 2);
-		int[] pos = {startPosX, START_POS_Y};
-		Color c = Color.red;
+		int[] pos = {startPosX, song.ballSpawnY};
 		
-		// TIME
-		// hitTime: desired time, in seconds, the ball should hit
-		// delayTime: time to wait before dropping
-		// dropTime: time it takes for the ball to fall
-		for(int t = 0; t < hitTimes.size(); t++) {
-			hitTimes.set(t, hitTimes.get(t) - dropTime);
-		}
+		BallBouncing bounceBall = new BallBouncing(song, hitTimes, pos, ballCounter+1);
 		
-		BallBouncing bounceBall = new BallBouncing(song, hitTimes, pos, c, ballCounter+1);
 		ballList.add(bounceBall);
 		ballCounter++;
 		return bounceBall;
 	}
 	
-	public BallSimple spawnSimpleBall(ArrayList<Double> hitTimes, int column) {
+	public BallSimple createSimpleBall(ArrayList<Double> hitTimes, int column) {
 		// ATTRIBUTES
 		int startPosX = ballCols[column] - (ballSize / 2);
-		int[] pos = {startPosX, START_POS_Y};
-		Color c = Color.red;
+		int[] pos = {startPosX, song.ballSpawnY};
 		
-		// TIME
-		// hitTime: desired time, in seconds, the ball should hit
-		// delayTime: time to wait before dropping
-		// dropTime: time it takes for the ball to fall
-		for(int t = 0; t < hitTimes.size(); t++) {
-			hitTimes.set(t, hitTimes.get(t) - dropTime);
-		}
-		
-		BallSimple simpBall = new BallSimple(song, hitTimes, pos, c, ballCounter+1);
+		BallSimple simpBall = new BallSimple(song, hitTimes, pos, ballCounter+1);
 		ballList.add(simpBall);
 		ballCounter++;
 		return simpBall;
@@ -135,15 +116,14 @@ public class BallDropper {
 	}
 	
 	public void rewindBalls() {
-		double currentTime = stats.getTimeElapsed();
-		System.out.println("yahhhh it's rewind time " + df.format(currentTime - delayTime));
-		delayTime = 0;
+		double currentTime = song.getTime();
+		System.out.println("yahhhh it's rewind time " + df.format(currentTime));
 		
 		for(int i = dropIndex-1; i > 0; i--) {
 			Ball ball = ballList.get(i);
 			
-			if(ball.getSpawnTime() > currentTime - delayTime) {
-				System.out.println("Rewind ball " + ball.ballNum + " with time: " + ball.getSpawnTime());
+			if(ball.getSpawnTime() > currentTime) {
+				//System.out.println("Rewind ball " + ball.ballNum + " with time: " + ball.getSpawnTime());
 				finishedBallList.remove(ball);
 				ball.moveBallToSpawnLoc();
 				dropIndex--;
@@ -156,21 +136,20 @@ public class BallDropper {
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	DROPPER
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
-	
+		
 	public void checkDrop() {
-		double currentTime = stats.getTimeElapsed();
+		double currentTime = song.getTime();
 		//System.out.println("CHECK DROP @ t = " + currentTime);
 		
 		if(dropIndex < ballList.size()) {
 			Ball b = ballList.get(dropIndex);
 			
-			if(b.getSpawnTime() <= currentTime - delayTime) {
+			if(b.getSpawnTime() <= song.getTime()) {
 				
 				// This second condition prevents a ball from spawning if its time has been skipped
 				if(checkRemove(b, currentTime)) {}
 				else {
-					//System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + df.format(currentTime));
-					
+					//System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + currentTime);
 					activeBallList.add(b); //add to the list of spawned balls
 	
 					b.falling = true;
@@ -181,7 +160,7 @@ public class BallDropper {
 	}
 	
 	private boolean checkRemove(Ball b, double currentTime) {
-		if(b.getSpawnTime() + 0.25 < currentTime - delayTime) {
+		if(b.getSpawnTime() + 0.25 < song.getTime()) {
 			System.out.println("Removed ball with drop time " + df.format(b.getSpawnTime()));
 			finishedBallList.add(b);
 			dropIndex++;
@@ -189,17 +168,6 @@ public class BallDropper {
 		}
 		else
 			return false;
-	}
-	
-	public void calcDropTime() {
-		BallSimple testBall = new BallSimple(song);
-		ballSize = testBall.ballSize;
-		
-		START_POS_Y = -2 * ballSize;	// determine what height to spawn ball from
-		
-		deltaY = paddle.getPaddleY() - START_POS_Y; // how far to drop
-		dropTime = testBall.calcDropTime(deltaY); // how long to drop
-		removeBall(testBall);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -225,16 +193,12 @@ public class BallDropper {
 	
 	public void debugCatchTime(Ball ball) {
 		double actualCatchTime = ball.getCatchTime();
-		double shouldBeCaught = ball.getSpawnTime() + delayTime + dropTime;
+		//double shouldBeCaught = ball.getSpawnTime() + dropTime;
 		System.out.println("--------------------------------");
-		System.out.println("Expected Catch time: " + df.format(shouldBeCaught));
+		//System.out.println("Expected Catch time: " + df.format(shouldBeCaught));
 		System.out.println("Actual Catch time: " + df.format(actualCatchTime));
-		System.out.println("CATCH DT: " + df.format(actualCatchTime - (shouldBeCaught)));
+		//System.out.println("CATCH DT: " + df.format(actualCatchTime - (shouldBeCaught)));
 		System.out.println("--------------------------------");
-	}
-	
-	public double getDropTime() {
-		return dropTime;
 	}
 	
 	public void animateBalls() {
@@ -280,7 +244,10 @@ public class BallDropper {
 			g.setColor(Color.RED);
 			g2.drawLine(ballCols[i], 0, ballCols[i], screenH);
 		}
+		
 	}
+	
+	public void toggleShowBallNum() {showBallNum = showBallNum ? false : true;}
 	
 	public void toggleBallColumns() {
 		if(showBallColumns) showBallColumns = false;

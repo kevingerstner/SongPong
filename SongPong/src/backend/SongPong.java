@@ -19,8 +19,10 @@ import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
 
-import music.ParadiseColdplay;
-import music.SchoolBillWurtz;
+import scenes.MainMenu;
+import scenes.ParadiseColdplay;
+import scenes.SchoolBillWurtz;
+import scenes.Test;
 import ui.Menu;
 
 public class SongPong extends GamePanel{
@@ -32,16 +34,20 @@ public class SongPong extends GamePanel{
 	private int score = 0;
 	private Font font;
 	private FontMetrics metrics;
-			
-    private DecimalFormat df = new DecimalFormat("0.##");  // 2 dp
-    
+	
+	public ImageHandler ih;
+	public FontHandler fh;
+	public double worldScale;
+			    
     // UI
     private Menu myMenu;
     public MouseCursor customCursor;
 	private Robot mouseMover;
     
-    // GAME
-    private SongMap activeSong;
+    // Scenes
+    private Scene activeScene;
+    private MainMenu mainMenu;
+    private Test testSong;
     private ParadiseColdplay paradise;
     private SchoolBillWurtz school;
     
@@ -68,7 +74,7 @@ public class SongPong extends GamePanel{
 		long period = (long) 1000.0 / fps;
 		System.out.println("fps: " + fps + "; period: " + period + " ms");
 		new SongPong(period * 1000000L); // ms --> nanosecs
-	} // end of main()
+	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	INITIALIZE
@@ -77,16 +83,21 @@ public class SongPong extends GamePanel{
 	@Override
 	protected void simpleInitialize() {
 		
+		worldScale = 4.0;
+		
 		this.requestFocus();
 				
 		// keyboard input
-		checkForMenu();
+		keyboardInput();
 		
 		try {
 			mouseMover = new Robot();
 		} catch (AWTException e1) {
 			e1.printStackTrace();
 		}
+		
+		ih = new ImageHandler(this);
+		fh = new FontHandler();
 		
 		// UI components
 		myMenu = new Menu(this);
@@ -96,16 +107,43 @@ public class SongPong extends GamePanel{
 		font = new Font("SansSerif", Font.BOLD, 24);
 		metrics = this.getFontMetrics(font);
 		
-		// song
-		paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", "src/Music/ColdplayParadise.wav", 4);
-		school = new SchoolBillWurtz(this, "src/notemap/nm_school_bill_wurtz.txt", "src/Music/School_Bill_Wurtz.wav", 4);
-		activeSong = paradise;
-						
+		// scenes
+		mainMenu = new MainMenu(this);
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	STATE
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	public void startScene(String sceneName) {
+		switch(sceneName) {
+		case "mainmenu":
+			activeScene = mainMenu;
+			break;
+		case "paradise":
+			System.out.println("START SONG: PARADISE");
+			paradise = new ParadiseColdplay(this, "src/Notemap/nm_paradise_coldplay.txt", "src/Music/ColdplayParadise.wav");
+			activeScene = paradise;
+			break;
+		case "school":
+			System.out.println("START SONG: SCHOOL");
+			school = new SchoolBillWurtz(this, "src/notemap/nm_school_bill_wurtz.txt", "src/Music/School_Bill_Wurtz.wav");
+			activeScene = school;
+			break;
+		case "test":
+			System.out.println("START SONG: TEST");
+			testSong = new Test(this, "src/notemap/nm_test.txt", null);
+			activeScene = testSong;
+		default: 
+			System.err.println("That scene does not exist.");
+		}
+		activeScene.initScene();
 	}
 	
 	@Override
-	protected void songStart() {
-		activeSong.startSong();
+	public void pauseActions() {
+		activeScene.handleGamePause();
+		customCursor.setCursorDefault();
 	}
  
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -114,13 +152,13 @@ public class SongPong extends GamePanel{
 
 	@Override
 	protected void simpleRender(Graphics g) {
+	    // Render Scene
+	    activeScene.renderScene(g);
+		
 	    // Background Game Stuff
 	    gs.drawStatsBox(g);
 	    
-	    // Music Components
-	    activeSong.renderSongStuff(g);
-		
-		// UI Components
+		// Render Menu
 		if(myMenu.isMenuEnabled()) {
 			myMenu.displayMenu(g);
 		}
@@ -133,7 +171,12 @@ public class SongPong extends GamePanel{
 
 	@Override
 	protected void simpleUpdate() {
-		activeSong.updateSongStuff();
+		activeScene.updateScene();
+	}
+
+	@Override
+	protected void simpleAnimate() {
+		activeScene.animateScene();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -142,11 +185,12 @@ public class SongPong extends GamePanel{
 	
 	@Override
 	protected void mousePress(int x, int y) {
-		double timeClicked = gs.getTimeElapsed();
+		double timeClicked = getTimeElapsed();
 		if(myMenu.isMenuEnabled()) {
 			myMenu.checkOnMousePress(x, y);
+		} else {
+			activeScene.handleMousePress(x, y, timeClicked);
 		}
-		activeSong.handleMousePress(x, y, timeClicked);
 	}
 
 	@Override
@@ -155,19 +199,17 @@ public class SongPong extends GamePanel{
 			if(myMenu.isMenuEnabled()) {
 				myMenu.checkOnMouseHover(x, y);
 			}
-			activeSong.handleMouseMove(x, y);
+			activeScene.handleMouseMove(x, y);
 		}
 	}
 	
-	private void checkForMenu() {
+	private void keyboardInput() {
 		this.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
 				int keyCode = e.getKeyCode();
-				activeSong.handleKeyboardInput(keyCode);
+				activeScene.handleKeyboardInput(keyCode);
 				if (keyCode == KeyEvent.VK_ESCAPE)
 					myMenu.toggleMenu();
-				else if (keyCode == KeyEvent.VK_0)
-					activeSong.showBallColumns();
 			}
 		});
 	}
@@ -181,7 +223,10 @@ public class SongPong extends GamePanel{
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public SongMap getActiveSong() {
-		return activeSong;
+		if(activeScene instanceof SongMap)
+			return (SongMap) activeScene;
+		else
+			return null;
 	}
 	
 	@Override
@@ -196,17 +241,5 @@ public class SongPong extends GamePanel{
 		g.drawString(msg, x, y);
 	}
 
-	@Override
-	public void pauseActions() {
-		customCursor.setCursorDefault();
-		activeSong.tuneSpinner.pauseMusic();
-		activeSong.bd.stopBalls();
-	}
-
-	@Override
-	protected void gameAnimate() {
-		activeSong.animateStuff();
-	}
-
-} // end of WormChase class
+}
 

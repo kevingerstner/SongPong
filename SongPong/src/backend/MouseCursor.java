@@ -39,12 +39,12 @@ public class MouseCursor {
 	}
 	
 	public void setCursorInvisible() {
-		System.out.println("Invisible cursor.");
+		//System.out.println("Invisible cursor.");
 		frame.setCursor(c1);
 	}
 	
 	public void setCursorDefault() {
-		System.out.println("Default cursor.");
+		//System.out.println("Default cursor.");
 		frame.setCursor(c);
 	}
 }

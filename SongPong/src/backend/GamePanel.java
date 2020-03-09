@@ -26,36 +26,68 @@ import javax.swing.JFrame;
 
 public abstract class GamePanel extends JFrame implements Runnable {
 	private static final long serialVersionUID = 1863596360846514344L;
-	private static final int NUM_BUFFERS = 2; // used for page flipping
-
+	
+	/* NUM_BUFFERS:
+	 * Used for page flipping / double buffering */
+	private static final int NUM_BUFFERS = 2;
+	/* NO_DELAYS_PER_YIELD:
+	 * Number of frames with a delay of 0 ms before the animation thread yields
+	 * to other running threads. */
+	private static final int NO_DELAYS_PER_YIELD = 16;
+	/* MAX_FRAME_SKIPS:
+	 * Number of frames that can be skipped in any one animation loop
+	 * i.e. the games' state is updated but not rendered. Was originally 2.*/
+	private static int MAX_FRAME_SKIPS = 5;
+	/* MAX_STATS_INTERVAL:
+	 * record stats every 1 second (roughly) */
+	private static long MAX_STATS_INTERVAL = 1_000_000_000L;
+	/* NUM_FPS:
+	 * Number of FPS values stored to get an average */
+	private static int NUM_FPS = 10;
+	private DecimalFormat df = new DecimalFormat("0.##"); // 2 dp
+	
+	// REFERENCES
 	public GameStats gs;
 
-	private static final int NO_DELAYS_PER_YIELD = 16;
-
-	/*
-	 * Number of frames with a delay of 0 ms before the animation thread yields
-	 * to other running threads.
-	 */
-	private static int MAX_FRAME_SKIPS = 5; // was 2;
-	// no. of frames that can be skipped in any one animation loop
-	// i.e the games state is updated but not rendered
-
-	public int pWidth; // panel dimensions
+	// SCREEN
+	public int pWidth;
 	public int pHeight;
-
-	private Thread animator; // the thread that performs the animation
-	public boolean running = false; // used to stop the animation thread
-	public boolean isPaused = false;
-	private boolean finishedOff = false;
-
-	// used at game termination
-	protected boolean gameOver = false;
-
-	// used for full-screen exclusive mode
 	private GraphicsDevice gd;
 	protected GraphicsConfiguration gc;
 	private Graphics gScr;
 	private BufferStrategy bufferStrategy;
+	
+	// TIME
+	protected long period; // period between drawing in _nanosecs_
+	protected long statsInterval = 0L; // in ns
+	protected long totalElapsedTime = 0L; 
+	protected long prevStatsTime; // last time the stats were updated
+	protected long gameStartTime; // when the run loop begins
+	protected double timeSpentRunning = 0; // the amount of time the program has been running, in seconds
+	protected double pauseTime; // used to resume the game at the same time after it is paused
+	protected double sceneStartTime;
+	protected double timeInScene;
+	protected double skipTime;
+
+	// FPS and UPS
+	protected long frameCount = 0;
+	protected double fpsStore[];
+	protected long statsCount = 0;
+	protected double averageFPS = 0.0;
+	protected long framesSkipped = 0L;
+	protected long totalFramesSkipped = 0L;
+	protected double upsStore[];
+	protected double averageUPS = 0.0;
+
+	private Thread animator; // the thread that performs the animation
+	
+	// STATE
+	public boolean running = false; // used to stop the animation thread
+	public boolean isPaused = false;
+	public boolean sceneRunning = false;
+	private boolean finishedOff = false;
+	protected boolean gameOver = false;
+	
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	CONSTRUCTOR
@@ -64,8 +96,15 @@ public abstract class GamePanel extends JFrame implements Runnable {
 	public GamePanel(long period) {
 		
 		gs = new GameStats(this);
+		this.period = period;
 		
-		gs.period = period;
+		// Initialize timing elements
+		fpsStore = new double[NUM_FPS];
+		upsStore = new double[NUM_FPS];
+		for (int i = 0; i < NUM_FPS; i++) {
+			fpsStore[i] = 0.0;
+			upsStore[i] = 0.0;
+		}
 
 		initFullScreen();
 
@@ -87,116 +126,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 
 		gameStart();
 
-	} // end of GamePanel()
-
-	
-	private void initFullScreen() {
-		GraphicsEnvironment ge = GraphicsEnvironment
-				.getLocalGraphicsEnvironment();
-		gd = ge.getDefaultScreenDevice();
-
-		setUndecorated(true); // no menu bar, borders, etc. or Swing components
-		setIgnoreRepaint(true); // turn off all paint events since doing active
-		// rendering
-		setResizable(false);
-
-		if (!gd.isFullScreenSupported()) {
-			System.out.println("Full-screen exclusive mode not supported");
-			System.exit(0);
-		}
-		gd.setFullScreenWindow(this); // switch on full-screen exclusive mode
-
-		// we can now adjust the display modes, if we wish
-		showCurrentMode();
-
-		// setDisplayMode(800, 600, 8); // or try 8 bits
-		// setDisplayMode(1280, 1024, 32);
-
-		reportCapabilities();
-
-		pWidth = getBounds().width;
-		pHeight = getBounds().height;
-
-		setBufferStrategy();
 	}
-
-	
-	private void reportCapabilities() {
-		System.out.println("=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=");
-		gc = gd.getDefaultConfiguration();
-
-		// Image Capabilities
-		ImageCapabilities imageCaps = gc.getImageCapabilities();
-		System.out.println("Image Caps. isAccelerated: "
-				+ imageCaps.isAccelerated());
-		System.out.println("Image Caps. isTrueVolatile: "
-				+ imageCaps.isTrueVolatile());
-
-		// Buffer Capabilities
-		BufferCapabilities bufferCaps = gc.getBufferCapabilities();
-		System.out.println("Buffer Caps. isPageFlipping: "
-				+ bufferCaps.isPageFlipping());
-		System.out.println("Buffer Caps. Flip Contents: "
-				+ getFlipText(bufferCaps.getFlipContents()));
-		System.out.println("Buffer Caps. Full-screen Required: "
-				+ bufferCaps.isFullScreenRequired());
-		System.out.println("Buffer Caps. MultiBuffers: "
-				+ bufferCaps.isMultiBufferAvailable());
-		System.out.println("=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=");
-	} // end of reportCapabilities()
-
-	//??????????
-	private String getFlipText(BufferCapabilities.FlipContents flip) {
-		if (flip == null)
-			return "false";
-		else if (flip == BufferCapabilities.FlipContents.UNDEFINED)
-			return "Undefined";
-		else if (flip == BufferCapabilities.FlipContents.BACKGROUND)
-			return "Background";
-		else if (flip == BufferCapabilities.FlipContents.PRIOR)
-			return "Prior";
-		else
-			// if (flip == BufferCapabilities.FlipContents.COPIED)
-			return "Copied";
-	} // end of getFlipTest()
-
-	//?????????
-	private void setBufferStrategy() {
-		
-		createBufferStrategy(NUM_BUFFERS);
-		bufferStrategy = getBufferStrategy(); // store for later
-		
-	} // end of setBufferStrategy()
-
-/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
- * 	QUIT
- * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
-	
-	private void readyForTermination() {
-		addKeyListener(new KeyAdapter() {
-			// listen for esc, q, end, ctrl-c on the canvas to
-			// allow a convenient exit from the full screen configuration
-			public void keyPressed(KeyEvent e) {
-				int keyCode = e.getKeyCode();
-				if ((keyCode == KeyEvent.VK_Q)
-						|| (keyCode == KeyEvent.VK_END)
-						|| ((keyCode == KeyEvent.VK_C) && e.isControlDown())) {
-					running = false;
-				}
-			}
-		});
-
-		// for shutdown tasks
-		// a shutdown may not only come from the program
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				running = false;
-				finishOff();
-			}
-		});
-	} // end of readyForTermination()
-
-
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	GAME STATES
@@ -204,17 +134,79 @@ public abstract class GamePanel extends JFrame implements Runnable {
 	
 	public void resumeGame() {
 		isPaused = false;
-		gs.resumeTime();
+		long resumeTime = System.nanoTime();
+		gameStartTime += resumeTime - pauseTime;
 	}
 
 	public void pauseGame() {
 		isPaused = true;
-		gs.pauseTime();
+		pauseTime = System.nanoTime();
 		pauseActions();
 	}
 
 	public void stopGame() {
 		running = false;
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	RENDER & ANIMATE
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	private void gameRender(Graphics gScr) {
+		// clear the background
+		gScr.setColor(Color.black);
+		gScr.fillRect(0, 0, pWidth, pHeight);
+
+		// call Song Pong's render
+		simpleRender(gScr);
+
+		if (gameOver)
+			gameOverMessage(gScr);
+	}
+	
+	private void gameAnimate() {
+		if(!isPaused && !gameOver)
+			simpleAnimate();
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	UPDATE
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+
+	private void screenUpdate() {
+		// use active rendering
+		try {
+			gScr = bufferStrategy.getDrawGraphics();
+			gameRender(gScr);
+			gScr.dispose();
+			if (!bufferStrategy.contentsLost())
+				bufferStrategy.show();
+			else
+				System.out.println("Contents Lost");
+		} catch (Exception e) {
+			e.printStackTrace();
+			running = false;
+		}
+	} // end of screenUpdate()
+
+	/**
+	 * Should be update the game state
+	 */
+	private void gameUpdate() {
+		if (!isPaused && !gameOver)
+			simpleUpdate();
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	TIME
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	protected void skipForwardTime(double sec) {
+		skipTime += (long)(sec * 1_000_000_000);
+	}
+	
+	protected void skipBackwardTime(double sec) {
+		skipTime -= (long)(sec * 1_000_000_000);
 	}
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -230,7 +222,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 			animator = new Thread(this); //puts this GameFrame in new Thread
 			animator.start(); // calls GameFrame's run method
 		}
-		songStart();
+		startScene("mainmenu");
 	}
 	
 	public void run()
@@ -242,9 +234,9 @@ public abstract class GamePanel extends JFrame implements Runnable {
 		double accumulator = 0;
 		double dt = 0.004; // animation refresh rate
 
-		gs.gameStartTime = System.nanoTime();
-		gs.prevStatsTime = gs.gameStartTime;
-		beforeTime = gs.gameStartTime;
+		gameStartTime = System.nanoTime();
+		prevStatsTime = gameStartTime;
+		beforeTime = gameStartTime;
 
 		running = true;
 
@@ -256,7 +248,7 @@ public abstract class GamePanel extends JFrame implements Runnable {
 
 			afterTime = System.nanoTime();
 			timeDiff = afterTime - beforeTime;
-			sleepTime = (gs.period - timeDiff) - overSleepTime;
+			sleepTime = (period - timeDiff) - overSleepTime;
 
 			// If this process took shorter than a cycle, sleep
 			// If this process took longer than a cycle, yield
@@ -294,92 +286,168 @@ public abstract class GamePanel extends JFrame implements Runnable {
 			 * required FPS.
 			 */
 			int skips = 0;
-			while ((excess > gs.period) && (skips < MAX_FRAME_SKIPS)) {
-				excess -= gs.period;
+			while ((excess > period) && (skips < MAX_FRAME_SKIPS)) {
+				excess -= period;
 				gameUpdate(); // update state but don't render
 				skips++;
 			}
-			gs.framesSkipped += skips;
-			gs.storeStats();
+			framesSkipped += skips;
+			
+			// UPDATE TIMING
+			if(!isPaused) {
+				timeSpentRunning = (System.nanoTime() - gameStartTime); // ns
+				if(sceneRunning) {
+					timeInScene = ((double)(timeSpentRunning - sceneStartTime + skipTime) / 1_000_000_000);
+				}
+			}
+
+			storeStats();
 		}
 		finishOff();
 		System.exit(0); // so window disappears
 	} // end of run()
-
-	/**
-	 * Renders to the backbuffer
-	 */
-	private void gameRender(Graphics gScr) {
-		// clear the background
-		gScr.setColor(Color.black);
-		gScr.fillRect(0, 0, pWidth, pHeight);
-
-		// call Song Pong's render
-		simpleRender(gScr);
-
-		if (gameOver)
-			gameOverMessage(gScr);
-	}
-
-	private void screenUpdate() {
-		// use active rendering
-		try {
-			gScr = bufferStrategy.getDrawGraphics();
-			gameRender(gScr);
-			gScr.dispose();
-			if (!bufferStrategy.contentsLost())
-				bufferStrategy.show();
-			else
-				System.out.println("Contents Lost");
-		} catch (Exception e) {
-			e.printStackTrace();
-			running = false;
-		}
-	} // end of screenUpdate()
-
-	/**
-	 * Should be update the game state
-	 */
-	private void gameUpdate() {
-		if (!isPaused && !gameOver)
-			simpleUpdate();
-
-	}
-
 	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	GETTERS & SETTERS
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	public double getTimeElapsed() {
+		return timeSpentRunning;
+	}
+	
+	public double getSceneTime() {
+		return timeInScene;
+	}
+	
+	public void setSceneStartTime() {
+		sceneStartTime = timeSpentRunning;
+	}
+	
+	public void resetSceneTime() {
+		timeInScene = 0;
+	}
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	STATS
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	/**
+	 * storeStats():
+	 * 
+	 * - the summed periods for all the iterations in this
+	 * interval (period is the amount of time a single frame iteration should
+	 * take), the actual elapsed time in this interval, the error between these
+	 * two numbers;
+	 * 
+	 * - the total frame count, which is the total number of calls to run();
+	 * 
+	 * - the frames skipped in this interval, the total number of frames
+	 * skipped. A frame skip is a game update without a corresponding render;
+	 * 
+	 * - the FPS (frames/sec) and UPS (updates/sec) for this interval, the
+	 * average FPS & UPS over the last NUM_FPSs intervals.
+	 * 
+	 * The data is collected every MAX_STATS_INTERVAL (1 sec).
+	 */
+	protected void storeStats(){
+		
+		frameCount++;
+		statsInterval += period;
+		
+		long timeNow = System.nanoTime();
+		
+		if (statsInterval >= MAX_STATS_INTERVAL) { // record stats every
+
+			long realElapsedTime = timeNow - prevStatsTime; // time since last stats collection
+			totalElapsedTime += realElapsedTime;
+
+			totalFramesSkipped += framesSkipped;
+
+			double actualFPS = 0; // calculate the latest FPS and UPS
+			double actualUPS = 0;
+			if (totalElapsedTime > 0) {
+				actualFPS = (((double) frameCount / totalElapsedTime) * 1_000_000_000L);
+				actualUPS = (((double) (frameCount + totalFramesSkipped) / totalElapsedTime) * 1000000000L);
+			}
+
+			// store the latest FPS and UPS
+			fpsStore[(int) statsCount % NUM_FPS] = actualFPS;
+			upsStore[(int) statsCount % NUM_FPS] = actualUPS;
+			statsCount = statsCount + 1;
+
+			double totalFPS = 0.0; // total the stored FPSs and UPSs
+			double totalUPS = 0.0;
+			for (int i = 0; i < NUM_FPS; i++) {
+				totalFPS += fpsStore[i];
+				totalUPS += upsStore[i];
+			}
+
+			if (statsCount < NUM_FPS) { // obtain the average FPS and UPS
+				averageFPS = totalFPS / statsCount;
+				averageUPS = totalUPS / statsCount;
+			} else {
+				averageFPS = totalFPS / NUM_FPS;
+				averageUPS = totalUPS / NUM_FPS;
+			}
+			
+			framesSkipped = 0;
+			prevStatsTime = timeNow;
+			statsInterval = 0L; // reset
+		}
+	}
+	
+	protected void printStats() {
+		System.out.println("+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=");
+		System.out.println("Frame Count/Loss: " + frameCount + " / "
+				+ totalFramesSkipped);
+		System.out.println("Average FPS: " + df.format(averageFPS));
+		System.out.println("Average UPS: " + df.format(averageUPS));
+		System.out.println("Time Spent: " + timeSpentRunning + " secs");
+		System.out.println("Total Elapsed Time: " + ((double)totalElapsedTime / 1_000_000_000L) + " sec");
+	} // end of printStats()
+
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
- * 	TERMINATION / CLEANUP METHODS
+ * 	ABSTRACT GAME METHODS TO IMPLEMENT
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
-	/**
-	 * finishOff():
-	 * Tasks to do before terminating. Called at end of run() and via the
-	 * shutdown hook in readyForTermination().
-	 * 
-	 * The call at the end of run() is not really necessary, but included for
-	 * safety. The flag stops the code being called twice.
-	 **/
-	private void finishOff(){ 
-		// System.out.println("finishOff");
-		if (!finishedOff) {
-			finishedOff = true;
-			gs.printStats();
-			restoreScreen();
-			System.exit(0);
-		}
-	}
 
 	/**
-	 * restoreScreen():
-	 * Switch off full screen mode. This also resets the display mode if it's
-	 * been changed.
-	 **/
-	private void restoreScreen(){
-		Window w = gd.getFullScreenWindow();
-		if (w != null)
-			w.dispose();
-		gd.setFullScreenWindow(null);
-	}
+	 * Should implement game specific rendering
+	 * 
+	 * @param g
+	 */
+	protected abstract void simpleRender(Graphics g);
+
+	/**
+	 * Should display a game specific game over message
+	 * 
+	 * @param g
+	 */
+	protected abstract void gameOverMessage(Graphics g);
+
+	protected abstract void simpleUpdate();
+	
+	protected abstract void simpleAnimate();
+	
+	protected abstract void startScene(String sceneName);
+		
+	protected abstract void pauseActions();
+
+	/**
+	 * This just gets called when a click occurs, no default behavior
+	 */
+	protected abstract void mousePress(int x, int y);
+
+	/**
+	 * This just gets called when a click occurs, no default behavior
+	 */
+	protected abstract void mouseMove(int x, int y);
+
+	/**
+	 * Should be overridden to initialize the game specific components
+	 */
+	protected abstract void simpleInitialize();
+	
 
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	DISPLAY MODE METHODS
@@ -467,46 +535,143 @@ public abstract class GamePanel extends JFrame implements Runnable {
 				+ dm.getHeight() + "," + dm.getBitDepth() + ","
 				+ dm.getRefreshRate() + ")  ");
 	}
-
+	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
- * 	ABSTRACT GAME METHODS TO IMPLEMENT
+ * 	FSEM Things
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
-
-	/**
-	 * Should implement game specific rendering
-	 * 
-	 * @param g
-	 */
-	protected abstract void simpleRender(Graphics g);
-
-	/**
-	 * Should display a game specific game over message
-	 * 
-	 * @param g
-	 */
-	protected abstract void gameOverMessage(Graphics g);
-
-	protected abstract void simpleUpdate();
 	
-	protected abstract void gameAnimate();
+	private void initFullScreen() {
+		GraphicsEnvironment ge = GraphicsEnvironment
+				.getLocalGraphicsEnvironment();
+		gd = ge.getDefaultScreenDevice();
+
+		setUndecorated(true); // no menu bar, borders, etc. or Swing components
+		setIgnoreRepaint(true); // turn off all paint events since doing active
+		// rendering
+		setResizable(false);
+
+		if (!gd.isFullScreenSupported()) {
+			System.out.println("Full-screen exclusive mode not supported");
+			System.exit(0);
+		}
+		gd.setFullScreenWindow(this); // switch on full-screen exclusive mode
+
+		// we can now adjust the display modes, if we wish
+		showCurrentMode();
+
+		// setDisplayMode(800, 600, 8); // or try 8 bits
+		// setDisplayMode(1280, 1024, 32);
+
+		reportCapabilities();
+
+		pWidth = getBounds().width;
+		pHeight = getBounds().height;
+
+		setBufferStrategy();
+	}
+
 	
-	protected abstract void songStart();
+	private void reportCapabilities() {
+		System.out.println("=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=");
+		gc = gd.getDefaultConfiguration();
+
+		// Image Capabilities
+		ImageCapabilities imageCaps = gc.getImageCapabilities();
+		System.out.println("Image Caps. isAccelerated: "
+				+ imageCaps.isAccelerated());
+		System.out.println("Image Caps. isTrueVolatile: "
+				+ imageCaps.isTrueVolatile());
+
+		// Buffer Capabilities
+		BufferCapabilities bufferCaps = gc.getBufferCapabilities();
+		System.out.println("Buffer Caps. isPageFlipping: "
+				+ bufferCaps.isPageFlipping());
+		System.out.println("Buffer Caps. Flip Contents: "
+				+ getFlipText(bufferCaps.getFlipContents()));
+		System.out.println("Buffer Caps. Full-screen Required: "
+				+ bufferCaps.isFullScreenRequired());
+		System.out.println("Buffer Caps. MultiBuffers: "
+				+ bufferCaps.isMultiBufferAvailable());
+		System.out.println("=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=");
+	} // end of reportCapabilities()
+
+	//??????????
+	private String getFlipText(BufferCapabilities.FlipContents flip) {
+		if (flip == null)
+			return "false";
+		else if (flip == BufferCapabilities.FlipContents.UNDEFINED)
+			return "Undefined";
+		else if (flip == BufferCapabilities.FlipContents.BACKGROUND)
+			return "Background";
+		else if (flip == BufferCapabilities.FlipContents.PRIOR)
+			return "Prior";
+		else
+			// if (flip == BufferCapabilities.FlipContents.COPIED)
+			return "Copied";
+	} // end of getFlipTest()
+
+	//?????????
+	private void setBufferStrategy() {
 		
-	protected abstract void pauseActions();
+		createBufferStrategy(NUM_BUFFERS);
+		bufferStrategy = getBufferStrategy(); // store for later
+		
+	} // end of setBufferStrategy()
+	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	QUIT
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	private void readyForTermination() {
+		addKeyListener(new KeyAdapter() {
+			// listen for esc, q, end, ctrl-c on the canvas to
+			// allow a convenient exit from the full screen configuration
+			public void keyPressed(KeyEvent e) {
+				int keyCode = e.getKeyCode();
+				if ((keyCode == KeyEvent.VK_END) || ((keyCode == KeyEvent.VK_C) && e.isControlDown())) {
+					running = false;
+				}
+			}
+		});
+
+		// for shutdown tasks
+		// a shutdown may not only come from the program
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				running = false;
+				finishOff();
+			}
+		});
+	}
+	
+	/**
+	 * finishOff():
+	 * Tasks to do before terminating. Called at end of run() and via the
+	 * shutdown hook in readyForTermination().
+	 * 
+	 * The call at the end of run() is not really necessary, but included for
+	 * safety. The flag stops the code being called twice.
+	 **/
+	private void finishOff(){ 
+		// System.out.println("finishOff");
+		if (!finishedOff) {
+			finishedOff = true;
+			printStats();
+			restoreScreen();
+			System.exit(0);
+		}
+	}
 
 	/**
-	 * This just gets called when a click occurs, no default behavior
-	 */
-	protected abstract void mousePress(int x, int y);
-
-	/**
-	 * This just gets called when a click occurs, no default behavior
-	 */
-	protected abstract void mouseMove(int x, int y);
-
-	/**
-	 * Should be overridden to initialize the game specific components
-	 */
-	protected abstract void simpleInitialize();
+	 * restoreScreen():
+	 * Switch off full screen mode. This also resets the display mode if it's
+	 * been changed.
+	 **/
+	private void restoreScreen(){
+		Window w = gd.getFullScreenWindow();
+		if (w != null)
+			w.dispose();
+		gd.setFullScreenWindow(null);
+	}
 
 } // end of GamePanel class

@@ -16,38 +16,25 @@ public class BallSimple extends Ball{
 	
 	// ATTRIBUTES
 	
-	private double bounceTime = 1;
-	private double bounceSpeedMod = 1;
-	private double bounceAcc = (BALL_SPEED / bounceTime);
-	
 	private BufferedImage[] explodeFrames;
 	private int activeFrame = 0;
-	
-	// Used for Test Ball
-	public BallSimple(SongMap song) {
-		super(song);
-	}
 
-	public BallSimple(SongMap song, ArrayList<Double> spawnTimes, int[] pos, Color c, int num) {
+	public BallSimple(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
 		super(song, spawnTimes, pos, num);
-		explodeFrames = ih.loadStripImageArray("src/images/ball_red_strip.png", 6);
+		ballSprite = ih.loadImage("src/images/Simple Ball/simple_ball.png");
+		explodeFrames = ih.loadStripImageArray("src/images/Simple Ball/simple_ball_strip.png", 6);
+		setSize(ballSprite.getWidth());
 	}
+	
 	
 	protected void handleCollide() {
-		acceleration[1] = bounceAcc;
-		velocity[1] *= bounceSpeedMod;
-		myColor = Color.green;
-		doneBouncing = true;
+		velocity[1] = -LAST_BOUNCE_SPEED;
+		
 	}
 		
 	synchronized public void drawBall(Graphics g) {
 		// MOTION
 		super.drawBall(g);
-	}
-
-	@Override
-	protected void handleFinish() {
-		
 	}
 	
 	protected void animate() {
@@ -60,6 +47,13 @@ public class BallSimple extends Ball{
 				activeFrame = 0;
 			}
 		}
+	}
+	
+	// Used for Test Ball
+	public BallSimple(SongMap song) {
+		super(song);
+		ballSprite = ih.loadImage("src/images/ball_red.png");
+		setSize(ballSprite.getWidth());
 	}
 	
 }

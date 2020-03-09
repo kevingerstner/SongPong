@@ -1,3 +1,4 @@
+
 package backend;
 import java.awt.Graphics;
 import java.awt.Robot;
@@ -11,51 +12,68 @@ import java.util.Scanner;
 
 import gamecomponents.Paddle;
 
-public abstract class SongMap{
+public abstract class SongMap extends Scene{
 	
 	// REFERENCES
 	protected SongPong game;
 	protected GameStats gs;
 	protected Thread musicThread;
 	public MusicPlayer tuneSpinner;
-	public ImageHandler imgHandler;
+	public ImageHandler ih;
+	public FontHandler fh;
 	public ScoreKeeper sk;
+	private String notemapPath;
 	
 	// TOOLS
 	protected ClickTimer ct;
 	protected SongSurfer ss;
 	
+	// OPTIONS
+	protected boolean debugMode = false;
+	
+	// STATE
+	protected boolean musicStarted = false;
+	
 	// GAME COMPONENTS
 	protected Paddle paddle;
 	protected BallDropper bd;
 	
+	// CONSTANTS
+	public int paddleY;
+	public int ballSpawnY;
+	
 	// WORLD INFO
 	public int screenW;
 	public int screenH;
-	public double worldScale = 4.0;
+	public double worldScale;
 	
-	protected double delayTimeSec;
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public SongMap(SongPong game, String notemapPath, String musicPath, double delaySec) {
+	public SongMap(SongPong game, String notemapPath, String musicPath) {
 		this.game = game;
 		this.gs = game.gs;
-		this.delayTimeSec = delaySec;
-		imgHandler = new ImageHandler(this);
+		this.ih = game.ih;
+		this.fh = game.fh;
+		this.notemapPath = notemapPath;
+		this.worldScale = game.worldScale;
 		
 		screenW = game.pWidth;
 		screenH = game.pHeight;
+		paddleY = screenH - (screenH / 10);
+		ballSpawnY = -100;
 		
 		// Game components
 		paddle = new Paddle(this);
 		bd = new BallDropper(this);
 				
 		// Music components
-		tuneSpinner = new MusicPlayer(game, delayTimeSec);
+		tuneSpinner = new MusicPlayer(this);
 		tuneSpinner.loadMusic(musicPath);
+		
+		// Notemap
 		readNoteMap(notemapPath);
 		
 		// Tools
@@ -68,42 +86,58 @@ public abstract class SongMap{
  * 	INITIALIZE
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public void startSong() {
-		
-		musicThread = new Thread(tuneSpinner);
-		musicThread.start();
-		tuneSpinner.cueMusic();
-
-		System.out.println("Initialized music thread...");
-		
+	public void initScene() {
 		paddle.resetPaddle();
 		game.moveMouseToPos(paddle.getPaddleX(), paddle.getPaddleY());
 		game.customCursor.setCursorInvisible();
+    	if(debugMode) {
+    		bd.toggleShowBallNum();
+    	}
+		
+		tuneSpinner.playMusic();
+		musicStarted = true;
+		game.setSceneStartTime();
+		game.sceneRunning = true;
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	UPDATE
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public void updateSongStuff() {
-		bd.checkDrop();
-		bd.updateBalls();
+	public void updateScene() {
+		if(!game.isPaused && game.sceneRunning) {
+			bd.checkDrop();
+			bd.updateBalls();
+		}
 	}
 	
-	public void animateStuff() {
+	public void animateScene() {
 		bd.animateBalls();
+	}
+	
+	public void handleGamePause() {
+		tuneSpinner.pauseMusic();
+		bd.stopBalls();
+	}
+	
+	public void handleGameResume() {
+		tuneSpinner.resumeMusic();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	CLASS COMMUNICATOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 
+	public double getTime() {
+		return game.getSceneTime();
+	}
+	
 	public void addPoint() {
 		sk.addPoint();
 	}
 	
 	public void playCatchSFX() {
-		tuneSpinner.playCatchSound("src/music/ballCatch2.wav");
+		tuneSpinner.playCatchSound("src/music/ballCatch5.wav");
 	}
 	
 	public void playMissSFX() {
@@ -121,9 +155,10 @@ public abstract class SongMap{
  * 	RENDER
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public void renderSongStuff(Graphics g) {
-		if(bd.showBallColumns)
+	public void renderScene(Graphics g) {
+		if(debugMode) {
 	    	bd.displayColumns(g);
+		}
 		
 		// Game Elements
 		bd.renderBalls(g);
@@ -145,7 +180,7 @@ public abstract class SongMap{
 	}
 	
 	public void handleMousePress(int x, int y, double timeClicked) {
-		ct.recordClickTime(x, timeClicked);
+		ct.recordClickTime(x, getTime());
 	}
 	
 	public void handleKeyboardInput(int keyCode) {
@@ -153,6 +188,11 @@ public abstract class SongMap{
 			ss.skipForward();
 		} else if( keyCode == KeyEvent.VK_COMMA) {
 			ss.skipBackward();
+		} else if( keyCode == KeyEvent.VK_0) {
+			debugMode = debugMode ? false : true;
+			bd.toggleShowBallNum();
+		} else if( keyCode == KeyEvent.VK_1) {
+			tuneSpinner.toggleSound();
 		}
 	}
 	
@@ -170,32 +210,30 @@ public abstract class SongMap{
 			    String[] data = line.split("\t");
 			    
 			    // if line is blank or incomplete, skip it
-			    if(data.length < 3) {
-			    	System.err.println("LINE SKIPPED");
-			    	break;
+			    if(data.length >= 3) {
+			    	// COLUMN
+				    int column = Integer.valueOf(data[1]);
+				    
+				    // TIMES
+				    ArrayList<Double> times = new ArrayList<Double>();
+				    for(int i = 2; i < data.length; i++) {
+				    	times.add(Double.valueOf(data[i]));
+				    }
+				    
+				    // BALL TYPE
+				    String type = data[0];
+				    switch(type) {
+				    case "s":
+				    	bd.createSimpleBall(times, column);
+				    	break;
+				    case "b":
+				    	bd.createBounceBall(times, column);
+				    	break;
+				    default:
+				    	System.err.println("BALL TYPE DOES NOT EXIST");
+				    }
 			    }
 			    
-			    // COLUMN
-			    int column = Integer.valueOf(data[1]);
-			    
-			    // TIMES
-			    ArrayList<Double> times = new ArrayList<Double>();
-			    for(int i = 2; i < data.length; i++) {
-			    	times.add(Double.valueOf(data[i]));
-			    }
-			    
-			    // BALL TYPE
-			    String type = data[0];
-			    switch(type) {
-			    case "s":
-			    	bd.spawnSimpleBall(times, column);
-			    	break;
-			    case "b":
-			    	bd.spawnBounceBall(times, column);
-			    	break;
-			    default:
-			    	System.err.println("BALL TYPE DOES NOT EXIST");
-			    }
 			}
 			scanner.close();
 		} catch (IOException e) {

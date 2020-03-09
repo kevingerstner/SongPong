@@ -1,6 +1,8 @@
 package ui;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
@@ -8,41 +10,57 @@ import java.awt.geom.Rectangle2D;
 
 import backend.SongPong;
 
-public class MenuButton{
+public abstract class MenuButton{
 	
-	private SongPong game;
-	protected volatile boolean isOverButton = false;
-	private Rectangle2D buttonArea;
+	public volatile boolean isOverButton = false;
+	protected Rectangle2D buttonArea;
 	private String buttonText;
+	
+	private Color hoverColor;
+	private Color color;
+	private Font font;
+	private FontMetrics metrics;
 	
 	private boolean boxEnabled = false;
 	private int xPos;
 	private int yPos;
 	private int boxWidth;
-	private int boxPadding = 5;
+	private int padding = 0;
 	private int boxHeight;
 	
-	public MenuButton(SongPong game, String buttonText, int x, int y) {
-		this.game = game;
+	private String align = "left";
+	
+	public MenuButton(String buttonText, int x, int y, Color color, Color hoverColor, Font font, String align) {
 		this.xPos = x;
 		this.yPos = y;
-		boxWidth = 100;
-		boxHeight = 30;
+		this.font = font;
+		this.color = color;
+		this.hoverColor = hoverColor;
 		this.buttonText = buttonText;
-		buttonArea = new Rectangle2D.Float(xPos, yPos, boxWidth, boxHeight); //x, y, width, height
+		this.align = align;
+		buttonArea = new Rectangle2D.Float(xPos - (boxWidth / 2), yPos, boxWidth + padding, boxHeight + padding); //x, y, width, height
+
 	}
-	
-	public void mouseAction() {
-	
-	}
-	
+		
 	public void drawButton(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
+		metrics = g2.getFontMetrics(font);
 		
-		g.setColor(Color.white);
-	
+		g.setColor(color);
+		
+		boxWidth = metrics.stringWidth(buttonText);
+		boxHeight = metrics.getHeight();
+		
 		if (isOverButton)
-			g.setColor(Color.DARK_GRAY);
+			g.setColor(hoverColor);
+		
+		if(align.equals("left")) {
+			buttonArea = new Rectangle2D.Float(xPos, yPos, boxWidth + padding, boxHeight + padding); //x, y, width, height
+			g2.drawString(buttonText, xPos+padding, yPos + boxHeight);
+		} else if(align.equals("center")) {
+			buttonArea = new Rectangle2D.Float(xPos - (boxWidth / 2), yPos, boxWidth + padding, boxHeight + padding); //x, y, width, height
+			g2.drawString(buttonText, xPos+padding-(boxWidth / 2), yPos + boxHeight);
+		}
 		
 		//BOX
 		if(boxEnabled) {
@@ -52,13 +70,16 @@ public class MenuButton{
 			g2.draw(buttonArea);
 		}
 		
-		//TEXT
-		g2.drawString(buttonText, xPos+boxPadding, yPos+(boxHeight/2)+boxPadding);
 	}
 
-	protected void isHovered(int x, int y) {
-		if(game.running) {
-			isOverButton = buttonArea.contains(x, y) ? true : false;
-		}
+	public void isHovered(int x, int y) {
+		isOverButton = buttonArea.contains(x, y) ? true : false;
 	}
+	
+
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	ABSTRACT --> All buttons must implement action
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	public abstract void mouseAction();
 }

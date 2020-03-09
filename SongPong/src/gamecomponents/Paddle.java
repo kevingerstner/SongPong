@@ -40,7 +40,7 @@ public class Paddle {
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public Paddle(SongMap song) {
-		ih = song.imgHandler;
+		ih = song.ih;
 		worldScale = song.worldScale;
 		
 		screenX = song.screenW;
@@ -51,7 +51,7 @@ public class Paddle {
 		width = (int) (paddleSprite.getWidth() * worldScale);
 		radius = width / 2;
 		
-		position[1] = screenY - (screenY / 10);// This is a good height for the paddle
+		position[1] = song.paddleY;// This is a good height for the paddle
 		position[0] = (screenX / 2) - (radius);// Spawn paddle in the middle of the screen
 		rightBound = screenX - width;
 	}
@@ -74,10 +74,10 @@ public class Paddle {
 			LookupOp op = new LookupOp(lookupTable, null);
 			dstImage = op.filter(paddleSprite, null);
 			
-			ih.drawImage(g2, dstImage, position);
+			ih.drawImageScaled(g2, dstImage, position);
 		}
 		else {
-			ih.drawImage(g2, paddleSprite, position);
+			ih.drawImageScaled(g2, paddleSprite, position);
 		}
 	}
 	

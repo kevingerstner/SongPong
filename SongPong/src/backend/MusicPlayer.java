@@ -4,11 +4,13 @@ import java.io.File;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 
-public class MusicPlayer implements Runnable {
+public class MusicPlayer{
 	
-	SongPong game;
-	GameStats gs;
+	private SongMap song;
+	
+	private boolean soundIsEnabled = false;
 	
 	Clip musicClip;
 	Clip catchClip;
@@ -16,40 +18,36 @@ public class MusicPlayer implements Runnable {
 	long clipTime;
 	
 	protected boolean musicPlaying = false;
-	protected boolean musicStarted = false;
-	
-	private long delayTimeMillis;
-	protected double songStartTime;
-	
+		
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	DEFAULT CONSTRUCTOR
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public MusicPlayer(SongPong game, double delayTime) {
-		this.game = game;
-		this.gs = game.gs;
-		this.delayTimeMillis = (long)(delayTime * 1000);
+	public MusicPlayer(SongMap song) {
+		this.song = song;
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	MUSIC TRACK
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public void playMusic() {
-		musicClip.start();
-		songStartTime = gs.getTimeElapsed(); 
-		System.out.println("START MUSIC @ time = " + songStartTime);
+	public void toggleSound() {
+		soundIsEnabled = soundIsEnabled ? false : true;
 	}
 	
-	public void cueMusic() {
-		System.out.println("Cued music...");
-		musicStarted = true;
+	public void playMusic() {
+		if(musicClip != null) {
+			musicClip.start();
+			System.out.println("Music starts at " + song.getTime());
+		}
 	}
 	
 	public void skipSeconds(double sec) {
-		long currentClipTime = musicClip.getMicrosecondPosition();
-		long longSkipTime = (long)(sec * 1_000_000); // convert seconds to microseconds
-		musicClip.setMicrosecondPosition(currentClipTime + longSkipTime);
+		if(musicClip != null) {
+			long currentClipTime = musicClip.getMicrosecondPosition();
+			long longSkipTime = (long)(sec * 1_000_000); // convert seconds to microseconds
+			musicClip.setMicrosecondPosition(currentClipTime + longSkipTime);
+		}
 	}
 	
 	public void loadMusic(String musicLocation) {
@@ -67,16 +65,17 @@ public class MusicPlayer implements Runnable {
 		}
 		catch(Exception ex) 
 		{
-			ex.printStackTrace();
 			System.err.println("Could not load music. RIP.");
 		}
 	}
 	
 	public void pauseMusic() {
-		System.out.println("PAUSE MUSIC");
-		musicPlaying = false;
-		clipTime = musicClip.getMicrosecondPosition();
-		musicClip.stop();
+		if(musicClip != null) {
+			System.out.println("PAUSE MUSIC");
+			musicPlaying = false;
+			clipTime = musicClip.getMicrosecondPosition();
+			musicClip.stop();
+		}
 	}
 	
 	public void resumeMusic() {
@@ -85,26 +84,13 @@ public class MusicPlayer implements Runnable {
 		musicClip.setMicrosecondPosition(clipTime);
 		musicClip.start();
 	}
-
-	@Override
-	public void run() {
-		// Wait until signal is recieved
-		while(!musicStarted) {
-			Thread.yield();
-		}
-		try {
-			Thread.sleep(delayTimeMillis);
-		} catch (InterruptedException e) {
-			System.err.println("Music sleep failed.");
-		}
-		playMusic();
-	}
 	
 	/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 	 * 	CLIP
 	 * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public synchronized void playCatchSound(String musicLocation) {
+		if(soundIsEnabled) {
 		  new Thread(new Runnable() {
 		  // The wrapper thread is unnecessary, unless it blocks on the
 		  // Clip finishing; see comments.
@@ -114,6 +100,8 @@ public class MusicPlayer implements Runnable {
 				File musicPath = new File(musicLocation);
 		        AudioInputStream inputStream = AudioSystem.getAudioInputStream(musicPath);
 		        catchClip.open(inputStream);
+		        //FloatControl volume = (FloatControl) catchClip.getControl(FloatControl.Type.MASTER_GAIN);
+		        //volume.setValue(-1 * 20);
 		        catchClip.start(); 
 		      } catch (Exception e) {
 		        System.err.println(e.getMessage());
@@ -121,8 +109,10 @@ public class MusicPlayer implements Runnable {
 		    }
 		  }).start();
 		}
+		}
 	
 	public synchronized void playMissSound(String musicLocation) {
+		if(soundIsEnabled) {
 		  new Thread(new Runnable() {
 		  // The wrapper thread is unnecessary, unless it blocks on the
 		  // Clip finishing; see comments.
@@ -138,6 +128,7 @@ public class MusicPlayer implements Runnable {
 		      }
 		    }
 		  }).start();
+		}
 		}
 	
 }

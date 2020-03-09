@@ -20,14 +20,14 @@ public class SongSurfer {
 
 	public void skipForward() {
 		System.out.println("SKIP FORWARD " + skipAmt + " SEC.");
-		gs.skipForwardTime(skipAmt);
+		game.skipForwardTime(skipAmt);
 		player.skipSeconds(skipAmt);
 		bd.purgeBalls();
 	}
 	
 	public void skipBackward() {
 		System.out.println("SKIP BACKWARDS " + skipAmt + " SEC.");
-		gs.skipBackwardTime(skipAmt);
+		game.skipBackwardTime(skipAmt);
 		bd.purgeBalls();
 		bd.rewindBalls();
 		player.skipSeconds(-skipAmt);

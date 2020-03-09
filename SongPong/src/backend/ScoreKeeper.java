@@ -23,32 +23,13 @@ public class ScoreKeeper {
 	
 	public ScoreKeeper(SongMap song) {
 		this.song = song;
-		font = loadFont("src/font/ARCADE.TTF");
+		font = song.fh.getFont("arcade-li").deriveFont(48f);
 		
 		position[0] = song.screenW - 100;
 		position[1] = 10;
 	}
 	
 	private static final Font SERIF_FONT = new Font("serif", Font.PLAIN, 24);
-
-	public Font loadFont(String name) {
-		Font font = null;
-		if (name == null) {
-			System.err.println("Error loading font. Default applied.");
-	        return SERIF_FONT;
-	    }
-
-	    try {
-	        File fontFile = new File(name);
-	        font = Font.createFont(Font.TRUETYPE_FONT, fontFile).deriveFont(48f);
-	        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-	        ge.registerFont(font);
-	    } catch (Exception ex) {
-	    	System.err.println("ERROR LOADING FONT FROM FILE");
-	        font = SERIF_FONT;
-	    }
-	    return font;
-	}
 	
 	public void displayScore(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;

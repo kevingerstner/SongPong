@@ -18,7 +18,8 @@ import gamecomponents.Paddle;
 public abstract class Ball {
 
 	// CONSTANTS
-	protected final static double BALL_SPEED = 200;
+	protected final static double BALL_SPEED = 150;
+	protected final static double LAST_BOUNCE_SPEED = 350;
 	private double worldScale;
 	private DecimalFormat df = new DecimalFormat("0.###");  // 3 dp
 	
@@ -42,7 +43,7 @@ public abstract class Ball {
 	protected int startPosX;
 	protected int startPosY;
 	protected int[] startPosition = new int[2];
-	protected int[] position = new int[2];
+	protected double[] position = new double[2];
 	
 	// VELOCITY
 	protected double[] velocity = new double[2];
@@ -56,6 +57,11 @@ public abstract class Ball {
 	protected double totalTime = 0;
 	protected double lastTime;
 	protected double catchTime;
+	protected double dropTime;
+	
+	// LAG
+	//private double headphoneMode = 0.0;
+	private double headphoneMode = 0.4;
 	
 	// STATE
 	protected boolean falling = false;
@@ -64,9 +70,7 @@ public abstract class Ball {
 	protected int numBouncesLeft;
 	protected boolean doneBouncing = false;
 	protected boolean readyToDelete = false;
-	
-	// OPTIONS
-	private boolean showBallNum = true;
+
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	DEFAULT CONSTRUCTOR
@@ -75,18 +79,15 @@ public abstract class Ball {
 	public Ball(SongMap song, ArrayList<Double> spawnTimes, int[] pos, int num) {
 		this.song = song;
 		paddle = song.paddle;
-		this.spawnTimes = spawnTimes;
 		this.bd = song.bd;
 		this.gs = song.gs;
-		ih = song.imgHandler;
+		ih = song.ih;
 		this.game = song.game;
 		worldScale = song.worldScale;
 		
 		// ATTRIBUTES
 		ballNum = num;
 		numBouncesLeft = spawnTimes.size();
-		ballSprite = ih.loadImage("src/images/ball_red.png");
-		ballSize = (int)(ballSprite.getWidth() * worldScale);
 		
 		// POSITION
 		startPosition[0] = pos[0];
@@ -96,20 +97,14 @@ public abstract class Ball {
 		
 		// PHYSICS
 		initPhysics();
-	}
-	
-	/**
-	 * This constructor is used to create a test ball to gather info
-	 * @param song
-	 */
-	public Ball(SongMap song) {
-		this.song = song;
-		this.game = song.game;
-		ih = song.imgHandler;
 		
-		initPhysics();
-		ballSprite = ih.loadImage("src/images/ball_red.png");
-		ballSize = (int)(ballSprite.getWidth() * worldScale);
+		// ADJUST SPAWN TIMES BASED ON HOW LONG IT WILL TAKE TO FALL
+		double deltaY = song.paddleY - song.ballSpawnY; // how far to drop
+		dropTime = calcDropTime(deltaY); // how long to drop
+		for(int t = 0; t < spawnTimes.size(); t++) {
+			spawnTimes.set(t, spawnTimes.get(t) - dropTime + headphoneMode);
+		}
+		this.spawnTimes = spawnTimes;
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -127,9 +122,11 @@ public abstract class Ball {
 	public double calcDropTime(double deltaY) {
 		double determinant = BALL_SPEED * BALL_SPEED + (2.0 * acceleration[1] * deltaY);
 		double time = (-BALL_SPEED + Math.sqrt(determinant)) / acceleration[1];
-		System.out.println("+++++++++++++++++++++++++++++++++++");
-		System.out.println("Expected Ball Drop Time: " + df.format(time) + " sec.");
-		System.out.println("+++++++++++++++++++++++++++++++++++");
+		if(ballNum == 0) {
+			System.out.println("+++++++++++++++++++++++++++++++++++");
+			System.out.println("Expected Ball Drop Time: " + df.format(time) + " sec.");
+			System.out.println("+++++++++++++++++++++++++++++++++++");
+		}
 		return time;
 	}
 	
@@ -159,11 +156,11 @@ public abstract class Ball {
 	synchronized public void moveBall() {
 		// Ensures velocity starts at 0
 		if(firstUpdate) {
-			lastTime = gs.getTimeElapsed();
+			lastTime = song.getTime();
 			firstUpdate = false;
 		}
 		
-		double startTime = gs.getTimeElapsed();
+		double startTime = song.getTime();
 		double elapsedTime = startTime - lastTime;
 		double timeStep = elapsedTime; // in seconds
 		
@@ -173,26 +170,34 @@ public abstract class Ball {
 		
 		position[1] += (velocity[1] * timeStep); // update position
 		
+		if(ballNum == 2) {
+			//////////////////
+			//debugMovement();
+			//////////////////
+		}
+		
 		// ---- FALL ------------------------
 		if(falling && checkCollide()) {
-			catchTime = gs.getTimeElapsed();
+			catchTime = song.getTime();
+			
 			song.playCatchSFX();
-			System.out.println("CAUGHT BALL " + ballNum + " @ t = "+ df.format(catchTime));
+			//System.out.println("CAUGHT BALL " + ballNum + " @ t = "+ df.format(catchTime));
+			
 			position[1] -= 5; // move off of paddle
+			
 			timesCaught++;
 			song.addPoint();
 			numBouncesLeft--;
 			
-			if(numBouncesLeft > 0) {
-				//System.out.println("ball " + ballNum + " has " + numBouncesLeft + " bounces left.");
-				velocity[1] = -BALL_SPEED;
-				handleCollide();
-			}
-			else {
+			//////////////////////
+			//debugDropAccuracy();
+			//////////////////////
+
+			if(numBouncesLeft == 0) {
 				doneBouncing = true;
-				velocity[1] = -BALL_SPEED;
-				handleCollide();
 			}
+			
+			handleCollide();
 			
 		}
 		
@@ -202,7 +207,7 @@ public abstract class Ball {
 			song.invertPaddle();
 			song.playMissSFX();
 			missed = true;
-			handleFinish();
+			doneBouncing = true;
 		}
 		
 		// ---- END -------------------------
@@ -237,10 +242,10 @@ public abstract class Ball {
 	protected void drawBall(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 	
-		int[] adjPos = {position[0] - (ballSize / 2), position[1] - ballSize};
-		ih.drawImage(g2, ballSprite, adjPos);
+		double[] adjPos = {position[0] - (ballSize / 2), position[1] - ballSize};
+		ih.drawImageScaled(g2, ballSprite, adjPos);
 		
-		if(showBallNum)
+		if(bd.showBallNum)
 			displayBallNum(g2);
 	}
 	
@@ -268,26 +273,41 @@ public abstract class Ball {
 		}
 	}
 	
+	public void setSize(double s) {
+		ballSize = (int)(s * worldScale);
+	}
+	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	STUFF
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
-	
-	private boolean first = true;
-	
+		
 	private void debugMovement() {
 		System.out.println("---------------------------------");
-		System.out.println("TIME: " + totalTime);
-		//System.out.println("FORCE: " + force[1]);
 		System.out.println("ACCELERATION: " + acceleration[1]);
 		System.out.println("VELOCITY: " + velocity[1]);
 		System.out.println("POSITION: " + position[1]);
 		System.out.println("---------------------------------");
+	}
+	
+	private void debugDropAccuracy() {
+		System.out.println("?????????????????????????????????");
+		System.out.println("Catch Time: " + catchTime + " Spawn Time: " + spawnTimes.get(0) + " Drop Time: " + dropTime);
+		System.out.println("DROP DT: " + Math.abs( ( (catchTime - spawnTimes.get(0)) - dropTime) ) );
+		System.out.println("?????????????????????????????????");
+	}
+	
+	/**
+	 * This constructor is used to create a test ball to gather info
+	 * @param song
+	 */
+	public Ball(SongMap song) {
+		this.song = song;
+		this.game = song.game;
+		ih = song.ih;
 		
-		if(position[1] > 1050 && first) {
-			System.out.println("Actual Time to drop:" + df.format(totalTime));
-			System.out.println("+++++++++++++++++++++++++++++++++++++");
-			first = false;
-		}
+		initPhysics();
+		ballSprite = ih.loadImage("src/images/ball_red.png");
+		ballSize = (int)(ballSprite.getWidth() * worldScale);
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -295,9 +315,7 @@ public abstract class Ball {
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	protected abstract void handleCollide();
-	
-	protected abstract void handleFinish();
-	
+		
 	protected abstract void animate();
 	
 }
