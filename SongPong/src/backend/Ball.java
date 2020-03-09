@@ -176,6 +176,7 @@ public abstract class Ball {
 		// ---- FALL ------------------------
 		if(falling && checkCollide()) {
 			catchTime = gs.getTimeElapsed();
+			song.playCatchSFX();
 			System.out.println("CAUGHT BALL " + ballNum + " @ t = "+ df.format(catchTime));
 			position[1] -= 5; // move off of paddle
 			timesCaught++;
@@ -198,6 +199,8 @@ public abstract class Ball {
 		// ---- FINISH CONDITIONS -------------
 		
 		if(checkMissed()) {
+			song.invertPaddle();
+			song.playMissSFX();
 			missed = true;
 			handleFinish();
 		}

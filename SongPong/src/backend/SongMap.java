@@ -56,7 +56,6 @@ public abstract class SongMap{
 		// Music components
 		tuneSpinner = new MusicPlayer(game, delayTimeSec);
 		tuneSpinner.loadMusic(musicPath);
-		//tuneSpinner.loadMusic("src/Music/ColdplayParadise.wav");
 		readNoteMap(notemapPath);
 		
 		// Tools
@@ -70,6 +69,7 @@ public abstract class SongMap{
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
 	public void startSong() {
+		
 		musicThread = new Thread(tuneSpinner);
 		musicThread.start();
 		tuneSpinner.cueMusic();
@@ -100,6 +100,21 @@ public abstract class SongMap{
 
 	public void addPoint() {
 		sk.addPoint();
+	}
+	
+	public void playCatchSFX() {
+		tuneSpinner.playCatchSound("src/music/ballCatch2.wav");
+	}
+	
+	public void playMissSFX() {
+		tuneSpinner.playMissSound("src/music/ballMiss.wav");
+	}
+	
+	public void invertPaddle() {
+		if(!paddle.invertPaddle)
+			paddle.invertPaddle = true;
+		else
+			paddle.invertPaddle = false;
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+

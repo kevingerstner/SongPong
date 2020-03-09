@@ -15,6 +15,7 @@ public class BallDropper {
 	private SongMap song;
 	private GameStats stats;
 	private Paddle paddle;
+	private MusicPlayer player;
 	private DecimalFormat df = new DecimalFormat("0.##"); // 2 dp
 	
 	// CONSTANTS

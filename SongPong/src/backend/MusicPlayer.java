@@ -10,7 +10,9 @@ public class MusicPlayer implements Runnable {
 	SongPong game;
 	GameStats gs;
 	
-	Clip audioClip;
+	Clip musicClip;
+	Clip catchClip;
+	Clip missClip;
 	long clipTime;
 	
 	protected boolean musicPlaying = false;
@@ -19,14 +21,22 @@ public class MusicPlayer implements Runnable {
 	private long delayTimeMillis;
 	protected double songStartTime;
 	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	DEFAULT CONSTRUCTOR
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
 	public MusicPlayer(SongPong game, double delayTime) {
 		this.game = game;
 		this.gs = game.gs;
 		this.delayTimeMillis = (long)(delayTime * 1000);
 	}
 	
+/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * 	MUSIC TRACK
+ * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
 	public void playMusic() {
-		audioClip.start();
+		musicClip.start();
 		songStartTime = gs.getTimeElapsed(); 
 		System.out.println("START MUSIC @ time = " + songStartTime);
 	}
@@ -37,9 +47,9 @@ public class MusicPlayer implements Runnable {
 	}
 	
 	public void skipSeconds(double sec) {
-		long currentClipTime = audioClip.getMicrosecondPosition();
+		long currentClipTime = musicClip.getMicrosecondPosition();
 		long longSkipTime = (long)(sec * 1_000_000); // convert seconds to microseconds
-		audioClip.setMicrosecondPosition(currentClipTime + longSkipTime);
+		musicClip.setMicrosecondPosition(currentClipTime + longSkipTime);
 	}
 	
 	public void loadMusic(String musicLocation) {
@@ -48,8 +58,8 @@ public class MusicPlayer implements Runnable {
 			
 			if(musicPath.exists()) {
 				AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
-				audioClip = AudioSystem.getClip();
-				audioClip.open(audioInput);
+				musicClip = AudioSystem.getClip();
+				musicClip.open(audioInput);
 			}
 			else {
 				System.err.println("No file, bitch.");
@@ -65,15 +75,15 @@ public class MusicPlayer implements Runnable {
 	public void pauseMusic() {
 		System.out.println("PAUSE MUSIC");
 		musicPlaying = false;
-		clipTime = audioClip.getMicrosecondPosition();
-		audioClip.stop();
+		clipTime = musicClip.getMicrosecondPosition();
+		musicClip.stop();
 	}
 	
 	public void resumeMusic() {
 		System.out.println("RESUME MUSIC");
 		musicPlaying = true;
-		audioClip.setMicrosecondPosition(clipTime);
-		audioClip.start();
+		musicClip.setMicrosecondPosition(clipTime);
+		musicClip.start();
 	}
 
 	@Override
@@ -89,4 +99,45 @@ public class MusicPlayer implements Runnable {
 		}
 		playMusic();
 	}
+	
+	/* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+	 * 	CLIP
+	 * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
+	
+	public synchronized void playCatchSound(String musicLocation) {
+		  new Thread(new Runnable() {
+		  // The wrapper thread is unnecessary, unless it blocks on the
+		  // Clip finishing; see comments.
+		    public void run() {
+		      try {
+		        catchClip = AudioSystem.getClip();
+				File musicPath = new File(musicLocation);
+		        AudioInputStream inputStream = AudioSystem.getAudioInputStream(musicPath);
+		        catchClip.open(inputStream);
+		        catchClip.start(); 
+		      } catch (Exception e) {
+		        System.err.println(e.getMessage());
+		      }
+		    }
+		  }).start();
+		}
+	
+	public synchronized void playMissSound(String musicLocation) {
+		  new Thread(new Runnable() {
+		  // The wrapper thread is unnecessary, unless it blocks on the
+		  // Clip finishing; see comments.
+		    public void run() {
+		      try {
+		        missClip = AudioSystem.getClip();
+				File musicPath = new File(musicLocation);
+		        AudioInputStream inputStream = AudioSystem.getAudioInputStream(musicPath);
+		        missClip.open(inputStream);
+		        missClip.start(); 
+		      } catch (Exception e) {
+		        System.err.println(e.getMessage());
+		      }
+		    }
+		  }).start();
+		}
+	
 }

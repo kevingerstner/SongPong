@@ -5,6 +5,9 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.awt.image.LookupOp;
+import java.awt.image.LookupTable;
+import java.awt.image.ShortLookupTable;
 
 import backend.ImageHandler;
 import backend.SongMap;
@@ -26,6 +29,8 @@ public class Paddle {
 	private int leftBound = 0;
 	
 	private int[] position = new int[2];
+	
+	public boolean invertPaddle = false;
 	
 	// IMAGE
 	private BufferedImage paddleSprite;
@@ -57,8 +62,23 @@ public class Paddle {
 	
 	public void drawPaddle(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
-		g.setColor(Color.red);
-		ih.drawImage(g2, paddleSprite, position);
+		
+		if(invertPaddle) {
+			short[] data = new short[256];
+			for (short i = 0; i < 256; i++) {
+			    data[i] = (short) (255 - i);
+			}
+	
+			BufferedImage dstImage = null;
+			LookupTable lookupTable = new ShortLookupTable(0, data);
+			LookupOp op = new LookupOp(lookupTable, null);
+			dstImage = op.filter(paddleSprite, null);
+			
+			ih.drawImage(g2, dstImage, position);
+		}
+		else {
+			ih.drawImage(g2, paddleSprite, position);
+		}
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
