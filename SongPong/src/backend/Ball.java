@@ -60,8 +60,8 @@ public abstract class Ball {
 	protected double dropTime;
 	
 	// LAG
-	//private double headphoneMode = 0.0;
-	private double headphoneMode = 0.4;
+	private double headphoneMode = 0.0;
+	//private double headphoneMode = 0.38;
 	
 	// STATE
 	protected boolean falling = false;

@@ -95,23 +95,9 @@ public class BallDropper implements Runnable{
  * 	GAME CONTROLS
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/
 	
-	public void purgeBalls() {	
-		for(Ball b : activeBallList) {
-			finishedBallList.add(b);
-		}
-	}
-	
 	public void stopBalls() {
 		for(Ball ball : activeBallList) {
 			ball.stopMoving();
-		}
-	}
-	
-	public void removeBall(Ball b) {
-		try{
-			ballList.remove(b);
-		} catch(Exception e) {
-			System.err.println("Could not remove the ball.");
 		}
 	}
 	
@@ -119,11 +105,13 @@ public class BallDropper implements Runnable{
 		double currentTime = song.getTime();
 		System.out.println("yahhhh it's rewind time " + df.format(currentTime));
 		
+		// look through all balls that have already been dropped or skipped
 		for(int i = dropIndex-1; i > 0; i--) {
 			Ball ball = ballList.get(i);
 			
-			if(ball.getSpawnTime() > currentTime) {
-				//System.out.println("Rewind ball " + ball.ballNum + " with time: " + ball.getSpawnTime());
+			// If ball is already spawned
+			if(ball.getSpawnTime() < currentTime) {
+				System.out.println("Rewind ball " + ball.ballNum + " with time: " + ball.getSpawnTime());
 				finishedBallList.remove(ball);
 				ball.moveBallToSpawnLoc();
 				dropIndex--;
@@ -149,7 +137,7 @@ public class BallDropper implements Runnable{
 				// This second condition prevents a ball from spawning if its time has been skipped
 				if(checkRemove(b, currentTime)) {}
 				else {
-					//System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + currentTime);
+					System.out.println("BALL " + b.ballNum + "/ SPAWN @ t=" + df.format(b.getSpawnTime()) + "s / TIME: " + currentTime);
 					activeBallList.add(b); //add to the list of spawned balls
 	
 					b.falling = true;
@@ -161,13 +149,17 @@ public class BallDropper implements Runnable{
 	
 	private boolean checkRemove(Ball b, double currentTime) {
 		if(b.getSpawnTime() + 0.25 < song.getTime()) {
-			System.out.println("Removed ball with drop time " + df.format(b.getSpawnTime()));
+			System.out.println("Removed ball "+ b.ballNum + " with drop time " + df.format(b.getSpawnTime()));
 			finishedBallList.add(b);
 			dropIndex++;
 			return true;
 		}
 		else
 			return false;
+	}
+	
+	public void clearFinishedBalls() {
+		finishedBallList.clear();
 	}
 	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+

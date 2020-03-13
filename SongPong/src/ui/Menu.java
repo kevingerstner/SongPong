@@ -103,7 +103,9 @@ public class Menu {
 			System.out.println("<MENU> RESUME GAME");
 			isEnabled = false;
 			game.resumeGame();
-			if(!switchedScenes) {
+			if(switchedScenes) {
+				game.resetSkipTime();
+			} else {
 				game.customCursor.setCursorInvisible();
 				game.getActiveSong().handleGameResume();
 			}

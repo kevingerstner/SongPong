@@ -22,13 +22,13 @@ public class SongSurfer {
 		System.out.println("SKIP FORWARD " + skipAmt + " SEC.");
 		game.skipForwardTime(skipAmt);
 		player.skipSeconds(skipAmt);
-		bd.purgeBalls();
+		bd.clearFinishedBalls();
 	}
 	
 	public void skipBackward() {
 		System.out.println("SKIP BACKWARDS " + skipAmt + " SEC.");
 		game.skipBackwardTime(skipAmt);
-		bd.purgeBalls();
+		bd.clearFinishedBalls();
 		bd.rewindBalls();
 		player.skipSeconds(-skipAmt);
 	}

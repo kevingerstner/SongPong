@@ -327,6 +327,10 @@ public abstract class GamePanel extends JFrame implements Runnable {
 		timeInScene = 0;
 	}
 	
+	public void resetSkipTime() {
+		skipTime = 0;
+	}
+	
 /* =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * 	STATS
  * =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+*/

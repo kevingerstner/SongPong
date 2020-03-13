@@ -1,11 +1,95 @@
-s	4	1.1
-s	4	1.3
-s	4	1.5
-s	4	1.7
-s	4	1.9
-s	4	2.0
-s	5	3.7
-s	5	3.9
-s	9	4.1
-s	7	4.6
-s	3	4.8
+s	15	4.0
+s	12	4.3
+s	9	4.6
+s	6	5.0	
+// BECAUSE I'M STUPID
+s	3	6.6	
+s	3	6.7
+s	5	7.1
+s	4	7.5
+s	1	7.7
+// I DON'T WANT NOBODY TELLING ME HOW TO
+s	15	9.1
+s	12	9.6
+s	9	10
+b	8	10.0	11.0
+b	6	11.2	13.1
+s	6	11.9
+s	5	12.0
+s	4	12.2
+s	3	12.4
+s	2	12.7
+b	4	14.2	16.2	18.2
+b	10	15.2	17.2	19.2
+// TELLING ME HOW TO DO EVERYTHING
+b	2	20.1	20.5	22.3
+b	3	20.3	20.8
+s	5	21.1
+s	7	21.4
+s	9	22.1
+// I DON'T WANT TO BE AFRAID
+b	16	24.0	26.0	29.0
+s	10	24.8
+s	6	25.1
+// OF CRIMINALS
+s	2	26.4
+s	6	27.3
+s	5	27.5
+s	4	27.7
+// I DON'T WANT TO BE AFRAID OF DANGEROUS POLITICIANS
+s	15	29.2
+s	12	29.4
+s	9	29.6
+s	12	30.1
+b	3	31.3	32.6
+b	4	31.5	32.8
+// I DON'T WANT TO BE AFRAID OF YOU
+s	15	33.2
+s	14	33.2
+s	15	33.4
+s	14	33.4
+s	13	33.6
+s	12	33.6
+s	13	33.8
+s	12	33.8
+s	11	34.1
+s	10	34.1
+s	11	34.3
+s	10	34.3
+s	5	34.8
+b	5	35.0
+// OR OF ME
+s	5	36.6
+s	2	36.9
+s	5	37.2
+// OR THE TRUTH
+s	5	39.3
+s	2	39.6
+s	5	39.9
+// INSTRUMENTAL
+b	3	41.3	44.5
+b	12	42.0	42.8
+b	4	42.3	43.3
+s	11	42.9
+// so that girl made me feel blue
+b	2	45.3	52.7
+s	2	45.6
+s	2	45.8
+s	2	46.1
+s	2	46.4
+s	2	47.4
+// so
+s	4	47.4
+s	10	47.7
+s	4	48.0
+s	10	48.4
+s	4	48.8
+// so that girl made me feel blue
+s	6	49.7
+s	6	49.9
+s	6	50.2
+s	6	50.5
+s	6	50.8
+s	6	51.1
+// don't go to school
+s	10	52.2

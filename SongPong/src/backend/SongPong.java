@@ -127,7 +127,7 @@ public class SongPong extends GamePanel{
 			break;
 		case "school":
 			System.out.println("START SONG: SCHOOL");
-			school = new SchoolBillWurtz(this, "src/notemap/nm_school_bill_wurtz.txt", "src/Music/School_Bill_Wurtz.wav");
+			school = new SchoolBillWurtz(this, "src/notemap/nm_school_bill_wurtz.txt", "src/Music/School_Bill_Wurtz2.wav");
 			activeScene = school;
 			break;
 		case "test":
